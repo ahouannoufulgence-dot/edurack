@@ -1,4 +1,3 @@
-
 import { Role, User } from './school-types';
 import { createAuditLog } from './audit';
 
@@ -40,45 +39,67 @@ const DEMO_ACCOUNTS: StoredUser[] = [
 ];
 
 /**
- * Initialise les comptes de démo si aucun utilisateur n'existe.
+ * Initialise les comptes de démo si nécessaire.
+ * S'assure que les comptes par défaut sont présents même si le stockage existe.
  */
 function initializeDemoUsers() {
-  if (typeof window !== 'undefined' && !localStorage.getItem(USERS_KEY)) {
-    localStorage.setItem(USERS_KEY, JSON.stringify(DEMO_ACCOUNTS));
+  if (typeof window === 'undefined') return;
+  
+  const existingRaw = localStorage.getItem(USERS_KEY);
+  let users: StoredUser[] = [];
+  
+  if (existingRaw) {
+    users = JSON.parse(existingRaw);
+  }
+
+  // Vérifier si les comptes de démo sont présents, sinon les ajouter
+  let updated = false;
+  DEMO_ACCOUNTS.forEach(demo => {
+    if (!users.find(u => u.id === demo.id)) {
+      users.push(demo);
+      updated = true;
+    }
+  });
+
+  if (updated || !existingRaw) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
   }
 }
 
 export function getRoleFromId(id: string): Role | null {
-  if (id.startsWith('DIR-')) return 'Directeur';
-  if (id.startsWith('ENS-')) return 'Enseignant';
-  if (id.startsWith('ELV-')) return 'Eleve';
-  if (id.startsWith('PAR-')) return 'Parent';
+  const upperId = id.toUpperCase();
+  if (upperId.startsWith('DIR-')) return 'Directeur';
+  if (upperId.startsWith('ENS-')) return 'Enseignant';
+  if (upperId.startsWith('ELV-')) return 'Eleve';
+  if (upperId.startsWith('PAR-')) return 'Parent';
   return null;
 }
 
-export function login(userId: string, password: string): { success: boolean; user?: User; message?: string } {
+export function login(userIdInput: string, passwordInput: string): { success: boolean; user?: User; message?: string } {
   initializeDemoUsers();
+  
+  const userId = userIdInput.trim();
+  const password = passwordInput;
   const role = getRoleFromId(userId);
   
   if (!role) {
-    return { success: false, message: "Identifiant invalide (Préfixe inconnu)." };
+    return { success: false, message: "Identifiant invalide (Le format doit être DIR-..., ENS-..., ELV-... ou PAR-...)." };
   }
 
   // Vérifier le lockout
   const attempts = JSON.parse(localStorage.getItem(LOCKOUT_KEY) || '{}');
   if (attempts[userId] >= 3) {
     createAuditLog(userId, 'Inconnu', 'LOCKOUT', `Compte verrouillé après 3 échecs`, null, null, 'high');
-    return { success: false, message: "Compte verrouillé. Contactez le directeur." };
+    return { success: false, message: "Compte verrouillé suite à plusieurs échecs. Contactez l'administration." };
   }
 
-  // Récupérer les utilisateurs (demo + ceux créés via activation)
+  // Récupérer les utilisateurs
   const users: StoredUser[] = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
   
-  // Chercher l'utilisateur avec l'ID et le mot de passe correspondants
-  const userMatch = users.find(u => u.id === userId && u.password === password);
+  // Chercher l'utilisateur avec l'ID (insensible à la casse pour l'ID) et le mot de passe (sensible à la casse)
+  const userMatch = users.find(u => u.id.toUpperCase() === userId.toUpperCase() && u.password === password);
 
   if (userMatch) {
-    // Créer la session sans le mot de passe
     const { password: _, ...userSession } = userMatch;
     
     localStorage.setItem(SESSION_KEY, JSON.stringify(userSession));
@@ -92,7 +113,7 @@ export function login(userId: string, password: string): { success: boolean; use
   } else {
     attempts[userId] = (attempts[userId] || 0) + 1;
     localStorage.setItem(LOCKOUT_KEY, JSON.stringify(attempts));
-    createAuditLog(userId, 'Inconnu', 'ACCESS_DENIED', `Échec de connexion (Tentative ${attempts[userId]}/3)`);
+    createAuditLog(userId, 'Inconnu', 'ACCESS_DENIED', `Échec de connexion (Tentative ${attempts[userId]}/3) pour l'identifiant ${userId}`);
     return { success: false, message: "Identifiant ou mot de passe incorrect." };
   }
 }
