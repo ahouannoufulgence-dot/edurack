@@ -47,7 +47,7 @@ export function initializeDemoUsers(force = false) {
     if (force) {
       localStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(LOCKOUT_KEY);
-      createAuditLog('SYSTEM', 'Admin', 'LOGIN', 'Réinitialisation complète du système effectuée', null, null, 'high');
+      createAuditLog('SYSTEM', 'Admin', 'SECURITY_ALERT', 'Réinitialisation complète du système effectuée', null, null, 'high');
     }
   }
 }
