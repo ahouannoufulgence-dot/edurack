@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -47,11 +48,11 @@
 
 @keyframes zoom-slow {
   0% { transform: scale(1); }
-  100% { transform: scale(1.08); }
+  100% { transform: scale(1.12); }
 }
 
 .animate-zoom-slow {
-  animation: zoom-slow 25s ease-in-out infinite alternate;
+  animation: zoom-slow 30s ease-in-out infinite alternate;
 }
 
 .bg-emerald-deep {
@@ -64,4 +65,8 @@
 
 .h-13 {
   height: 3.25rem;
+}
+
+.h-15 {
+  height: 3.75rem;
 }
