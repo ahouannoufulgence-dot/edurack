@@ -24,7 +24,54 @@ export function saveToStorage<T>(key: string, data: T[]) {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
-// GESTION DES ELEVES
+// INSCRIPTION ET ATTRIBUTION D'ID
+export function registerStudent(data: {
+  nom: string;
+  prenom: string;
+  sexe: 'M' | 'F';
+  classLevel: string;
+  password: string;
+  secretQuestion: string;
+  secretAnswer: string;
+}) {
+  const users = getFromStorage<User>(KEYS.USERS);
+  const fullName = `${data.prenom} ${data.nom}`.toUpperCase();
+  
+  // 1. Créer un utilisateur temporaire
+  const tempId = `NEW-${Math.random().toString(36).substr(2, 5)}`;
+  const newUser = {
+    id: tempId,
+    identifiant: tempId,
+    name: fullName,
+    nom: data.nom.toUpperCase(),
+    prenom: data.prenom,
+    sexe: data.sexe,
+    classLevel: data.classLevel,
+    role: 'Eleve',
+    password: data.password, // En environnement réel, ceci serait hashé
+    questionSecrete: data.secretQuestion,
+    reponseSecrete: data.secretAnswer,
+    statutCompte: 'actif',
+    dateCreation: new Date().toISOString(),
+    premierAcces: false
+  } as any;
+
+  saveToStorage(KEYS.USERS, [...users, newUser]);
+  
+  // 2. Déclencher le recalcul alphabétique pour la classe
+  // Ceci va transformer l'ID TEMP en ELV-CLASSE-00X selon l'ordre alphabétique
+  syncIdentitySystem(data.classLevel);
+  
+  // 3. Récupérer l'identifiant final attribué
+  const updatedUsers = getFromStorage<User>(KEYS.USERS);
+  const finalUser = updatedUsers.find(u => u.name === fullName && u.classLevel === data.classLevel);
+  
+  createAuditLog(finalUser?.id || tempId, fullName, 'ACCOUNT_ACTIVATION', `Nouvel élève inscrit et ID attribué : ${finalUser?.id}`, null, finalUser, 'medium');
+  
+  return finalUser?.id || tempId;
+}
+
+// GESTION DES ELEVES (ADMIN)
 export function addStudent(studentData: any) {
   const users = getFromStorage<User>(KEYS.USERS);
   
@@ -49,7 +96,6 @@ export function addStudent(studentData: any) {
 export function saveGrade(grade: Partial<GradeRecord>) {
   const grades = getFromStorage<GradeRecord>(KEYS.GRADES);
   
-  // On cherche si une note existe déjà pour cet élève, cette matière et ce trimestre
   const existingIdx = grades.findIndex(g => 
     g.eleveId === grade.eleveId && 
     g.matiereId === grade.matiereId && 
@@ -94,7 +140,6 @@ export function getGlobalStats() {
 
   const totalStudents = students.length;
   
-  // Moyenne de toutes les moyennes saisies
   const validGrades = grades.filter(g => g.moyenne > 0);
   const avg = validGrades.length > 0 
     ? validGrades.reduce((acc, curr) => acc + curr.moyenne, 0) / validGrades.length 
