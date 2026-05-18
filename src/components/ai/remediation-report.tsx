@@ -6,11 +6,12 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription }
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, FileCheck, BrainCircuit, ArrowRight } from "lucide-react";
 import { generateRemediationReport, GenerateRemediationReportOutput } from "@/ai/flows/generate-remediation-report";
-import { Student, ConductGrade } from "@/lib/school-types";
+import { User, GradeRecord, SUBJECTS } from "@/lib/school-types";
+import { getFromStorage } from "@/lib/data-service";
 import { useToast } from "@/hooks/use-toast";
 
 interface AIReportProps {
-  student: Student;
+  student: User;
 }
 
 export function RemediationReport({ student }: AIReportProps) {
@@ -21,29 +22,42 @@ export function RemediationReport({ student }: AIReportProps) {
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      // Dummy academic data for flow - in real app, fetch from state
-      const academicPerformances = [
-        {
-          trimester: 'T1' as const,
-          subjects: [
-            { name: 'Mathématiques', average: 14.5 },
-            { name: 'Français', average: 11.2 },
-            { name: 'SVT', average: 9.5 }
-          ],
-          overallAverage: 11.7,
-          rank: '12ème sur 30'
-        }
-      ];
+      const allGrades = getFromStorage<GradeRecord>('edutrack_grades');
+      const studentGrades = allGrades.filter(g => g.eleveId === student.id);
+
+      const trimesters = ['T1', 'T2', 'T3'] as const;
+      const academicPerformances = trimesters.map(t => {
+        const tGrades = studentGrades.filter(g => g.trimestre === t);
+        const subjects = tGrades.map(g => ({
+          name: SUBJECTS.find(s => s.id === g.matiereId)?.name || g.matiereId,
+          average: g.moyenne
+        }));
+        
+        const overallAverage = subjects.length > 0 
+          ? subjects.reduce((acc, curr) => acc + curr.average, 0) / subjects.length 
+          : 0;
+
+        return {
+          trimester: t,
+          subjects,
+          overallAverage,
+          rank: "Analyse en cours..."
+        };
+      }).filter(p => p.subjects.length > 0);
+
+      if (academicPerformances.length === 0) {
+        throw new Error("Aucune note trouvée pour cet élève.");
+      }
 
       const result = await generateRemediationReport({
         studentName: student.name,
-        className: student.classLevel,
-        conductGrade: student.conduct,
+        className: student.classLevel || 'N/A',
+        conductGrade: 'Bien', // À dynamiser plus tard
         academicPerformances
       });
       setReport(result);
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de générer le rapport.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erreur', description: error.message || 'Impossible de générer le rapport.' });
     } finally {
       setLoading(false);
     }
@@ -58,11 +72,11 @@ export function RemediationReport({ student }: AIReportProps) {
               <BrainCircuit className="w-8 h-8 text-emerald-deep" />
             </div>
             <CardTitle>Analyste Pédagogique IA</CardTitle>
-            <CardDescription>Générez un plan de remédiation personnalisé basé sur les résultats de {student.name}.</CardDescription>
+            <CardDescription>Analyse réelle des moyennes de {student.name}.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
             <div className="text-sm text-center max-w-md text-muted-foreground">
-              Notre IA analyse les moyennes, les rangs et la conduite pour proposer des actions concrètes d'amélioration adaptées au système béninois.
+              Notre IA scanne les moyennes de chaque trimestre saisies dans le système pour proposer des actions correctives personnalisées.
             </div>
             <Button 
               onClick={handleGenerate} 
@@ -70,7 +84,7 @@ export function RemediationReport({ student }: AIReportProps) {
               className="bg-emerald-deep hover:bg-emerald-deep/90 h-12 px-8 rounded-full font-bold shadow-lg gap-2"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-              {loading ? "Analyse en cours..." : "Lancer l'analyse intelligente"}
+              {loading ? "Calcul des moyennes et analyse..." : "Lancer l'analyse intelligente"}
             </Button>
           </CardContent>
         </Card>
@@ -123,11 +137,6 @@ export function RemediationReport({ student }: AIReportProps) {
               </section>
             </div>
 
-            <section className="border-l-4 border-emerald-deep pl-6 py-2">
-              <h4 className="font-bold text-gray-900 mb-2">Conduite & Discipline</h4>
-              <p className="text-sm text-muted-foreground">{report.conductFeedback}</p>
-            </section>
-
             <section className="bg-gray-50 p-6 rounded-xl border border-dashed border-gray-200">
               <h4 className="font-bold text-gray-900 mb-4">Recommandations Générales</h4>
               <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{report.generalRecommendations}</p>
@@ -135,7 +144,7 @@ export function RemediationReport({ student }: AIReportProps) {
           </CardContent>
           <CardFooter className="bg-gray-50 rounded-b-lg border-t flex justify-between">
             <Button variant="ghost" onClick={() => setReport(null)}>Nouvelle Analyse</Button>
-            <Button variant="outline" className="gap-2">Imprimer le rapport</Button>
+            <Button variant="outline" className="gap-2">Exporter en PDF</Button>
           </CardFooter>
         </Card>
       )}
