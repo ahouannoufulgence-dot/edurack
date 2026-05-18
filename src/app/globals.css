@@ -47,11 +47,11 @@
 
 @keyframes zoom-slow {
   0% { transform: scale(1); }
-  100% { transform: scale(1.1); }
+  100% { transform: scale(1.08); }
 }
 
 .animate-zoom-slow {
-  animation: zoom-slow 20s ease-in-out infinite alternate;
+  animation: zoom-slow 25s ease-in-out infinite alternate;
 }
 
 .bg-emerald-deep {
@@ -60,4 +60,8 @@
 
 .text-emerald-deep {
   color: #1A6B4A;
+}
+
+.h-13 {
+  height: 3.25rem;
 }
