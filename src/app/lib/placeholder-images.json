@@ -1,3 +1,4 @@
+
 {
   "placeholderImages": [
     {
@@ -33,13 +34,13 @@
     {
       "id": "login-bg",
       "description": "Élèves souriants en classe travaillant ensemble",
-      "imageUrl": "https://images.unsplash.com/photo-1544717297-fa95b3ee51f3?q=80&w=2070",
-      "imageHint": "african students classroom"
+      "imageUrl": "https://picsum.photos/seed/edutrack-school-life/1920/1080",
+      "imageHint": "students classroom"
     },
     {
       "id": "activation-bg",
       "description": "Bibliothèque scolaire calme et moderne",
-      "imageUrl": "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=2070",
+      "imageUrl": "https://picsum.photos/seed/edutrack-library/1920/1080",
       "imageHint": "school library"
     }
   ]

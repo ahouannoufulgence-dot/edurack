@@ -46,20 +46,22 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center md:justify-end px-4 md:px-24 relative overflow-hidden font-body bg-slate-900">
-      {/* Background Image with requested strict CSS properties via next/image */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
+      {/* Background Image Wrapper */}
+      <div className="absolute inset-0 z-0">
         {bgImage && (
-          <Image
-            src={bgImage.imageUrl}
-            alt={bgImage.description}
-            fill
-            className="object-cover animate-zoom-slow"
-            priority
-            data-ai-hint={bgImage.imageHint}
-          />
+          <div className="relative w-full h-full">
+            <Image
+              src={bgImage.imageUrl}
+              alt={bgImage.description}
+              fill
+              className="object-cover animate-zoom-slow"
+              priority
+              data-ai-hint={bgImage.imageHint}
+            />
+            {/* Voile sombre transparent : rgba(0,0,0,0.35) */}
+            <div className="absolute inset-0 bg-black/35 z-10" />
+          </div>
         )}
-        {/* Voile sombre transparent : rgba(0,0,0,0.35) */}
-        <div className="absolute inset-0 bg-black/35 z-10" />
       </div>
 
       {/* Discreet Motivational Slogan */}
@@ -77,7 +79,7 @@ export default function LoginPage() {
       </div>
 
       {/* Login Card with Advanced Glassmorphism */}
-      <Card className="w-full max-w-[440px] border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.3)] bg-white/80 backdrop-blur-[12px] relative z-20 rounded-[24px] overflow-hidden animate-in fade-in zoom-in duration-700 flex flex-col">
+      <Card className="w-full max-w-[440px] border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.3)] bg-white/70 backdrop-blur-[12px] relative z-20 rounded-[24px] overflow-hidden animate-in fade-in zoom-in duration-700 flex flex-col">
         <CardHeader className="text-center pt-10 pb-6">
           <div className="mx-auto flex flex-col items-center gap-3 mb-4">
             <div className="bg-emerald-deep p-3 rounded-2xl shadow-lg shadow-emerald-900/20">
