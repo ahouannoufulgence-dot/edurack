@@ -19,7 +19,8 @@ import {
   Sparkles,
   ShieldCheck,
   ShieldAlert,
-  UserPlus
+  UserPlus,
+  HelpCircle
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Role, User } from "@/lib/school-types";
@@ -47,6 +48,7 @@ const MENU_ITEMS = [
   { id: 'ai-analyst', label: 'Analyste IA', icon: Sparkles, roles: ['Directeur', 'Enseignant'] },
   { id: 'security', label: 'Sécurité Anti-Fraude', icon: ShieldAlert, roles: ['Directeur'] },
   { id: 'settings', label: 'Paramètres', icon: Settings, roles: ['Directeur'] },
+  { id: 'guide', label: 'Guide Utilisation', icon: HelpCircle, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
 ];
 
 export function AppLayout({ children, activeModule, setActiveModule, user }: AppLayoutProps) {

@@ -6,6 +6,7 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { User, Student } from '@/lib/school-types';
 import { StatsGrid } from '@/components/dashboard/stats-grid';
 import { CoefficientConfig } from '@/components/grades/coefficient-config';
+import { UserGuide } from '@/components/dashboard/user-guide';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -71,7 +72,7 @@ export default function EduTrackApp() {
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Rapport</Button>
+                <Button variant="outline" className="gap-2" onClick={() => setActiveModule('guide')}><ShieldCheck className="w-4 h-4" /> Comment ça marche ?</Button>
                 {user.role === 'Directeur' && <Button className="bg-emerald-deep gap-2"><Filter className="w-4 h-4" /> Filtrer</Button>}
               </div>
             </div>
@@ -188,6 +189,9 @@ export default function EduTrackApp() {
 
       case 'settings':
         return <CoefficientConfig />;
+
+      case 'guide':
+        return <UserGuide />;
 
       case 'ai-analyst':
         return selectedStudent ? (
