@@ -10,6 +10,7 @@ import { UserGuide } from '@/components/dashboard/user-guide';
 import { StudentManager } from '@/components/students/student-manager';
 import { GradeManager } from '@/components/grades/grade-manager';
 import { DisciplineManager } from '@/components/discipline/discipline-manager';
+import { ScheduleManager } from '@/components/schedule/schedule-manager';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -144,6 +145,9 @@ export default function EduTrackApp() {
 
       case 'absences':
         return <DisciplineManager />;
+
+      case 'schedule':
+        return <ScheduleManager user={user} />;
 
       case 'settings':
         return <CoefficientConfig />;
