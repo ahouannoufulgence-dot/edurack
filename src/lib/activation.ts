@@ -1,5 +1,6 @@
 import { ActivationToken, ClassLevel, User } from './school-types';
 import { createAuditLog } from './audit';
+import { syncIdentitySystem } from './identity-manager';
 
 const STORAGE_KEY = 'edutrack_activation_tokens';
 const USERS_KEY = 'edutrack_users';
@@ -70,7 +71,6 @@ export function verifyActivation(tokenId: string, birthDate: string, parentPhone
     return { success: false, message: "Identifiant bloqué. Contactez le surveillant." };
   }
 
-  // Normalisation des entrées pour la comparaison
   if (token.birthDate === birthDate && token.parentPhone === parentPhone) {
     return { success: true, message: "Vérification réussie.", token };
   } else {
@@ -92,7 +92,7 @@ export function completeActivation(tokenId: string, data: { email: string; photo
     token.activatedAt = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
     
-    // Création de l'utilisateur effectif pour permettre le login
+    // Création de l'utilisateur avec un identifiant provisoire
     const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
     const newUser: User & { password?: string } = {
       id: token.id,
@@ -100,19 +100,24 @@ export function completeActivation(tokenId: string, data: { email: string; photo
       role: 'Eleve',
       email: data.email,
       photoUrl: data.photoUrl,
+      classLevel: token.classLevel,
       studentId: token.id,
-      password: data.password || 'Pass1234'
+      password: data.password || 'Pass1234',
+      idHistory: []
     };
     
     localStorage.setItem(USERS_KEY, JSON.stringify([...users, newUser]));
+
+    // Déclenchement immédiat du recalcul des identifiants pour la classe
+    syncIdentitySystem(token.classLevel);
 
     createAuditLog(
       token.id, 
       token.studentName, 
       'ACCOUNT_ACTIVATION', 
-      `Activation finale terminée et compte créé`,
+      `Activation finale terminée et compte créé. Système d'identité synchronisé.`,
       null,
-      { email: data.email },
+      { email: data.email, classLevel: token.classLevel },
       'medium'
     );
   }

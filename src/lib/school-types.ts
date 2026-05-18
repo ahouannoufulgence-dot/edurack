@@ -9,6 +9,8 @@ export type User = {
   lastLogin?: string;
   subjectId?: string; // Pour les enseignants
   studentId?: string; // Pour les parents/élèves
+  classLevel?: ClassLevel; // Pour les élèves
+  idHistory?: string[]; // Historique des anciens identifiants
 };
 
 export type ClassLevel = 
@@ -70,7 +72,7 @@ export type AuditLog = {
   timestamp: string;
   userId: string;
   userName: string;
-  action: 'LOGIN' | 'LOGOUT' | 'GRADE_UPDATE' | 'GRADE_DELETE' | 'PAYMENT_RECORD' | 'ACCESS_DENIED' | 'ACCOUNT_ACTIVATION' | 'TOKEN_GENERATION' | 'LOCKOUT' | 'SECURITY_ALERT';
+  action: 'LOGIN' | 'LOGOUT' | 'GRADE_UPDATE' | 'GRADE_DELETE' | 'PAYMENT_RECORD' | 'ACCESS_DENIED' | 'ACCOUNT_ACTIVATION' | 'TOKEN_GENERATION' | 'LOCKOUT' | 'SECURITY_ALERT' | 'IDENTITY_RECALCULATION';
   details: string;
   oldValue?: any;
   newValue?: any;
@@ -101,6 +103,16 @@ export type Student = {
   isActivated?: boolean;
   email?: string;
   secretQuestion?: string;
+  idHistory?: string[];
+};
+
+export type Payment = {
+  id: string;
+  studentId: string;
+  amount: number;
+  receiptNumber: string;
+  date: string;
+  collectedBy: string;
 };
 
 export const SUBJECTS: Subject[] = [
