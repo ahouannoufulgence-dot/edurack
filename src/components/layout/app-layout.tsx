@@ -23,14 +23,16 @@ import {
   HelpCircle,
   Activity,
   User as UserIcon,
-  ChevronRight
+  ChevronRight,
+  History,
+  FolderArchive
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Role, User } from "@/lib/school-types";
 import { cn } from "@/lib/utils";
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, logout } from '@/lib/auth-service';
-import { getUnreadMessageCount, getFromStorage } from '@/lib/data-service';
+import { getUnreadMessageCount, getFromStorage, getActiveYear } from '@/lib/data-service';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -50,6 +52,7 @@ const MENU_ITEMS = [
   { id: 'payments', label: 'Paiements', icon: CreditCard, roles: ['Directeur', 'Parent', 'Eleve'] },
   { id: 'messaging', label: 'Messagerie', icon: MessageSquare, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
   { id: 'ai-analyst', label: 'Analyste IA', icon: Sparkles, roles: ['Directeur', 'Enseignant'] },
+  { id: 'archives', label: 'Archives & Années', icon: History, roles: ['Directeur'] },
   { id: 'security', label: 'Sécurité Anti-Fraude', icon: ShieldAlert, roles: ['Directeur'] },
   { id: 'settings', label: 'Paramètres', icon: Settings, roles: ['Directeur'] },
   { id: 'guide', label: 'Guide Utilisation', icon: HelpCircle, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
@@ -58,6 +61,7 @@ const MENU_ITEMS = [
 export function AppLayout({ children, activeModule, setActiveModule, user, onSearchSelect }: AppLayoutProps) {
   const [scrolled, setScrolled] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [activeYear, setActiveYear] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [showResults, setShowResults] = useState(false);
@@ -73,6 +77,7 @@ export function AppLayout({ children, activeModule, setActiveModule, user, onSea
   const updateNotifications = useCallback(() => {
     if (user?.id) {
       setUnreadCount(getUnreadMessageCount(user.id));
+      setActiveYear(getActiveYear());
     }
   }, [user?.id]);
 
@@ -115,7 +120,7 @@ export function AppLayout({ children, activeModule, setActiveModule, user, onSea
     if (result.role === 'Eleve' && onSearchSelect) {
       onSearchSelect(result);
     } else if (result.role === 'Enseignant') {
-      setActiveModule('students'); // Ou un module prof si disponible
+      setActiveModule('students');
     }
   };
 
@@ -132,6 +137,12 @@ export function AppLayout({ children, activeModule, setActiveModule, user, onSea
               </div>
               <span className="font-bold text-lg tracking-tight">EduTrack <span className="text-accent">Pro</span></span>
             </div>
+            {activeYear && (
+              <div className="mt-2 flex items-center gap-1.5 px-1">
+                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                <span className="text-[10px] font-black uppercase text-sidebar-foreground/60">{activeYear}</span>
+              </div>
+            )}
           </SidebarHeader>
           <SidebarContent className="px-3">
             <SidebarMenu className="gap-1">
@@ -227,7 +238,7 @@ export function AppLayout({ children, activeModule, setActiveModule, user, onSea
             <div className="flex items-center gap-4">
               <div className="hidden lg:flex items-center gap-2 mr-4 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
                 <Activity className="w-3 h-3 text-emerald-600 animate-pulse" />
-                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-tighter">Connexion Protégée</span>
+                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-tighter">Année {activeYear}</span>
               </div>
 
               <div className="relative cursor-pointer" onClick={() => setActiveModule('messaging')}>

@@ -43,3 +43,31 @@ export function getMention(moyenne: number): string {
   if (moyenne >= 10) return "Passable";
   return "Insuffisant";
 }
+
+/**
+ * Détermine la classe suivante pour la promotion automatique (Système Bénin)
+ */
+export function getNextClass(currentClass: string): string {
+  if (!currentClass) return currentClass;
+  const level = currentClass.split(' ')[0].toLowerCase();
+  const suffix = currentClass.split(' ').slice(1).join(' ');
+
+  const promotions: Record<string, string> = {
+    '6e': '5e',
+    '5e': '4e',
+    '4e': '3e',
+    '3e': '2nde',
+    '2nde': '1ère',
+    '1ère': 'Tle',
+    'tle': 'Diplômé'
+  };
+
+  const nextLevel = promotions[level];
+  if (!nextLevel) return currentClass;
+  if (nextLevel === 'Diplômé') return 'Diplômé';
+  
+  // Ajustement pour les passages Second Cycle (Séries)
+  if (level === '3e') return `2nde C ${suffix}`; // Par défaut vers C, à ajuster par le Dir.
+  
+  return `${nextLevel} ${suffix}`;
+}

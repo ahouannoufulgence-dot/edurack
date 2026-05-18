@@ -1,9 +1,11 @@
 
 import { 
   User, GradeRecord, PaymentRecord, ClassLevel, 
-  ALL_CLASSES, SUBJECTS, Role, AbsenceRecord, DisciplineRecord, CoefficientEntry 
+  ALL_CLASSES, SUBJECTS, Role, AbsenceRecord, DisciplineRecord, CoefficientEntry,
+  ArchiveData, EmploiDuTemps
 } from './school-types';
 import { createAuditLog } from './audit';
+import { getNextClass } from './school-logic';
 
 const KEYS = {
   USERS: 'edutrack_users',
@@ -13,7 +15,10 @@ const KEYS = {
   ABSENCES: 'edutrack_absences',
   DISCIPLINE: 'edutrack_discipline',
   MESSAGES: 'edutrack_messages',
-  COEFFS: 'edutrack_coeffs'
+  COEFFS: 'edutrack_coeffs',
+  SCHEDULE: 'edutrack_schedule',
+  CONFIG: 'edutrack_config',
+  ARCHIVES: 'edutrack_archives'
 };
 
 export function getFromStorage<T>(key: string): T[] {
@@ -28,9 +33,73 @@ export function saveToStorage<T>(key: string, data: T[]) {
   window.dispatchEvent(new Event('storage'));
 }
 
-/**
- * Système de coefficients dynamiques selon les séries béninoises
- */
+export function getActiveYear(): string {
+  if (typeof window === 'undefined') return '2025-2026';
+  const config = JSON.parse(localStorage.getItem(KEYS.CONFIG) || '{"activeYear": "2025-2026"}');
+  return config.activeYear;
+}
+
+export function setActiveYear(year: string) {
+  if (typeof window === 'undefined') return;
+  const config = JSON.parse(localStorage.getItem(KEYS.CONFIG) || '{}');
+  localStorage.setItem(KEYS.CONFIG, JSON.stringify({ ...config, activeYear: year }));
+  window.dispatchEvent(new Event('storage'));
+}
+
+export function closeAcademicYear(currentYear: string, nextYear: string) {
+  if (typeof window === 'undefined') return;
+
+  // 1. Archiver les données actuelles
+  const archive: ArchiveData = {
+    year: currentYear,
+    users: getFromStorage<User>(KEYS.USERS),
+    grades: getFromStorage<GradeRecord>(KEYS.GRADES),
+    absences: getFromStorage<AbsenceRecord>(KEYS.ABSENCES),
+    discipline: getFromStorage<DisciplineRecord>(KEYS.DISCIPLINE),
+    payments: getFromStorage<PaymentRecord>(KEYS.PAYMENTS),
+    schedule: getFromStorage<EmploiDuTemps>(KEYS.SCHEDULE),
+    timestamp: new Date().toISOString()
+  };
+
+  const archives = getFromStorage<ArchiveData>(KEYS.ARCHIVES);
+  saveToStorage(KEYS.ARCHIVES, [...archives, archive]);
+
+  // 2. Promotion des élèves
+  const users = getFromStorage<User>(KEYS.USERS);
+  const updatedUsers = users.map(user => {
+    if (user.role === 'Eleve' && user.classLevel !== 'Diplômé') {
+      return {
+        ...user,
+        classLevel: getNextClass(user.classLevel || ''),
+        classeId: getNextClass(user.classLevel || '')
+      };
+    }
+    return user;
+  });
+
+  saveToStorage(KEYS.USERS, updatedUsers);
+
+  // 3. Réinitialiser les données transactionnelles pour la nouvelle année
+  saveToStorage(KEYS.GRADES, []);
+  saveToStorage(KEYS.ABSENCES, []);
+  saveToStorage(KEYS.DISCIPLINE, []);
+  saveToStorage(KEYS.PAYMENTS, []);
+  saveToStorage(KEYS.SCHEDULE, []);
+  
+  // 4. Mettre à jour l'année active
+  setActiveYear(nextYear);
+
+  createAuditLog(
+    'SYSTEM', 
+    'Directeur', 
+    'YEAR_CLOSURE', 
+    `Clôture de l'année ${currentYear} et ouverture de ${nextYear}`,
+    currentYear,
+    nextYear,
+    'critical'
+  );
+}
+
 export function getCoefficient(classLevel: string, subjectId: string): number {
   const coeffs = getFromStorage<CoefficientEntry>(KEYS.COEFFS);
   const customEntry = coeffs.find(c => c.classLevel === classLevel && c.subjectId === subjectId);
@@ -130,7 +199,7 @@ export function addPayment(payment: Partial<PaymentRecord>) {
     ...payment,
     paiementId: `PAY-${Date.now()}`,
     datePaiement: new Date().toISOString(),
-    anneeScolaire: '2025-2026'
+    anneeScolaire: getActiveYear()
   } as PaymentRecord;
   saveToStorage(KEYS.PAYMENTS, [newPayment, ...payments]);
 }

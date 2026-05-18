@@ -74,6 +74,17 @@ export type CoefficientEntry = {
   value: number;
 };
 
+export type ArchiveData = {
+  year: string;
+  users: User[];
+  grades: GradeRecord[];
+  absences: AbsenceRecord[];
+  discipline: DisciplineRecord[];
+  payments: PaymentRecord[];
+  schedule: EmploiDuTemps[];
+  timestamp: string;
+};
+
 export const ALL_CLASSES: string[] = [
   '6e 1', '6e 2', '6e 3', '6e 4',
   '5e 1', '5e 2', '5e 3', '5e 4',
@@ -103,7 +114,7 @@ export type AuditLog = {
   timestamp: string;
   userId: string;
   userName: string;
-  action: 'LOGIN' | 'LOGOUT' | 'ACCESS_DENIED' | 'GRADE_UPDATE' | 'STUDENT_ADD' | 'PAYMENT_ADD' | 'ACCOUNT_ACTIVATION' | 'TOKEN_GENERATION' | 'SECURITY_ALERT' | 'LOCKOUT' | 'SYSTEM_RESET';
+  action: 'LOGIN' | 'LOGOUT' | 'ACCESS_DENIED' | 'GRADE_UPDATE' | 'STUDENT_ADD' | 'PAYMENT_ADD' | 'ACCOUNT_ACTIVATION' | 'TOKEN_GENERATION' | 'SECURITY_ALERT' | 'LOCKOUT' | 'SYSTEM_RESET' | 'YEAR_CLOSURE';
   details: string;
   oldValue?: any;
   newValue?: any;

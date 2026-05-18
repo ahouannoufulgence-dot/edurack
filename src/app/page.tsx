@@ -14,6 +14,7 @@ import { DisciplineManager } from '@/components/discipline/discipline-manager';
 import { ScheduleManager } from '@/components/schedule/schedule-manager';
 import { PaymentManager } from '@/components/payments/payment-manager';
 import { MessagingCenter } from '@/components/messaging/messaging-center';
+import { ArchiveManager } from '@/components/admin/archive-manager';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { RemediationReport } from '@/components/ai/remediation-report';
 import { SecurityDashboard } from '@/components/security/security-dashboard';
 import { TokenGenerator } from '@/components/admin/token-generator';
-import { ChevronRight, Filter, BrainCircuit, ShieldCheck, Lock } from 'lucide-react';
+import { ChevronRight, Filter, BrainCircuit, ShieldCheck, Lock, History } from 'lucide-react';
 import { getCurrentUser } from '@/lib/auth-service';
 import { getFromStorage } from '@/lib/data-service';
 import { useRouter } from 'next/navigation';
@@ -148,6 +149,7 @@ export default function EduTrackApp() {
 
       case 'security': return <SecurityDashboard />;
       case 'inscriptions': return <TokenGenerator />;
+      case 'archives': return <ArchiveManager />;
       case 'students': return <StudentManager />;
       case 'grades': 
         return user.role === 'Eleve' ? <StudentGradeView student={user} /> : <GradeManager user={user} />;
