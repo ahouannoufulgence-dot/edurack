@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, FileCheck, BrainCircuit, ArrowRight } from "lucide-react";
 import { generateRemediationReport, GenerateRemediationReportOutput } from "@/ai/flows/generate-remediation-report";
 import { User, GradeRecord, SUBJECTS } from "@/lib/school-types";
-import { getFromStorage } from "@/lib/data-service";
+import { getFromStorage, getCoefficient } from "@/lib/data-service";
 import { useToast } from "@/hooks/use-toast";
 
 interface AIReportProps {
@@ -24,24 +24,33 @@ export function RemediationReport({ student }: AIReportProps) {
     try {
       const allGrades = getFromStorage<GradeRecord>('edutrack_grades');
       const studentGrades = allGrades.filter(g => g.eleveId === student.id);
+      const classLevel = student.classLevel || 'N/A';
 
       const trimesters = ['T1', 'T2', 'T3'] as const;
       const academicPerformances = trimesters.map(t => {
         const tGrades = studentGrades.filter(g => g.trimestre === t);
-        const subjects = tGrades.map(g => ({
-          name: SUBJECTS.find(s => s.id === g.matiereId)?.name || g.matiereId,
-          average: g.moyenne
-        }));
         
-        const overallAverage = subjects.length > 0 
-          ? subjects.reduce((acc, curr) => acc + curr.average, 0) / subjects.length 
-          : 0;
+        let totalPoints = 0;
+        let totalCoeffs = 0;
+
+        const subjects = tGrades.map(g => {
+          const coeff = getCoefficient(classLevel, g.matiereId);
+          totalPoints += (g.moyenne * coeff);
+          totalCoeffs += coeff;
+          
+          return {
+            name: SUBJECTS.find(s => s.id === g.matiereId)?.name || g.matiereId,
+            average: g.moyenne
+          };
+        });
+        
+        const overallAverage = totalCoeffs > 0 ? totalPoints / totalCoeffs : 0;
 
         return {
           trimester: t,
           subjects,
-          overallAverage,
-          rank: "Analyse en cours..."
+          overallAverage: parseFloat(overallAverage.toFixed(2)),
+          rank: "Analyse des performances..."
         };
       }).filter(p => p.subjects.length > 0);
 
@@ -51,8 +60,8 @@ export function RemediationReport({ student }: AIReportProps) {
 
       const result = await generateRemediationReport({
         studentName: student.name,
-        className: student.classLevel || 'N/A',
-        conductGrade: 'Bien', // À dynamiser plus tard
+        className: classLevel,
+        conductGrade: 'Bien',
         academicPerformances
       });
       setReport(result);
@@ -72,11 +81,11 @@ export function RemediationReport({ student }: AIReportProps) {
               <BrainCircuit className="w-8 h-8 text-emerald-deep" />
             </div>
             <CardTitle>Analyste Pédagogique IA</CardTitle>
-            <CardDescription>Analyse réelle des moyennes de {student.name}.</CardDescription>
+            <CardDescription>Analyse réelle des moyennes pondérées de {student.name}.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
             <div className="text-sm text-center max-w-md text-muted-foreground">
-              Notre IA scanne les moyennes de chaque trimestre saisies dans le système pour proposer des actions correctives personnalisées.
+              Notre IA scanne les moyennes pondérées de chaque trimestre pour proposer des actions correctives basées sur les coefficients réels.
             </div>
             <Button 
               onClick={handleGenerate} 
@@ -84,7 +93,7 @@ export function RemediationReport({ student }: AIReportProps) {
               className="bg-emerald-deep hover:bg-emerald-deep/90 h-12 px-8 rounded-full font-bold shadow-lg gap-2"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-              {loading ? "Calcul des moyennes et analyse..." : "Lancer l'analyse intelligente"}
+              {loading ? "Calcul pondéré et analyse..." : "Lancer l'analyse intelligente"}
             </Button>
           </CardContent>
         </Card>

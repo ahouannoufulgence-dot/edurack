@@ -6,8 +6,8 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { User, GradeRecord, SUBJECTS } from "@/lib/school-types";
-import { getFromStorage } from "@/lib/data-service";
-import { FileText, TrendingUp, Award, Trophy, UserRound, ArrowDown, BarChart3 } from "lucide-react";
+import { getFromStorage, getCoefficient } from "@/lib/data-service";
+import { FileText, TrendingUp, Award, Trophy, UserRound, BarChart3 } from "lucide-react";
 import { 
   BarChart, 
   Bar, 
@@ -15,8 +15,7 @@ import {
   YAxis, 
   CartesianGrid, 
   ResponsiveContainer, 
-  Legend,
-  Tooltip as RechartsTooltip
+  Legend
 } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
@@ -29,9 +28,10 @@ export function StudentGradeView({ student }: { student: User }) {
   useEffect(() => {
     const allGrades = getFromStorage<GradeRecord>('edutrack_grades');
     const allUsers = getFromStorage<User>('edutrack_users');
+    const classLevel = student.classLevel || 'N/A';
     
     // Filtrer les élèves de la même classe
-    const classStudents = allUsers.filter(u => u.role === 'Eleve' && u.classLevel === student.classLevel);
+    const classStudents = allUsers.filter(u => u.role === 'Eleve' && u.classLevel === classLevel);
     const classStudentIds = classStudents.map(s => s.id);
 
     // Grades du trimestre pour toute la classe
@@ -41,7 +41,7 @@ export function StudentGradeView({ student }: { student: User }) {
     const myGrades = trimesterGrades.filter(g => g.eleveId === student.id);
     setGrades(myGrades);
 
-    // Calcul par matière
+    // Calcul par matière (Utilise les coefficients actuels)
     const statsBySubject = SUBJECTS.map(subj => {
       const subjectGrades = trimesterGrades.filter(g => g.matiereId === subj.id);
       const myGrade = myGrades.find(g => g.matiereId === subj.id);
@@ -63,18 +63,29 @@ export function StudentGradeView({ student }: { student: User }) {
 
     setSubjectStats(statsBySubject);
 
-    // Calcul global
-    const studentAverages = classStudentIds.map(id => {
-      const sGrades = trimesterGrades.filter(g => g.eleveId === id);
+    // Calcul global PONDÉRÉ
+    const calculateWeightedAvg = (sId: string) => {
+      const sGrades = trimesterGrades.filter(g => g.eleveId === sId);
       if (sGrades.length === 0) return 0;
-      return sGrades.reduce((acc, curr) => acc + curr.moyenne, 0) / sGrades.length;
-    }).filter(a => a > 0);
+      
+      let totalPoints = 0;
+      let totalCoeffs = 0;
+      
+      sGrades.forEach(g => {
+        // On récupère le coefficient en temps réel pour être sûr de la cohérence
+        const coeff = getCoefficient(classLevel, g.matiereId);
+        totalPoints += (g.moyenne * coeff);
+        totalCoeffs += coeff;
+      });
+
+      return totalCoeffs > 0 ? totalPoints / totalCoeffs : 0;
+    };
+
+    const studentAverages = classStudentIds.map(id => calculateWeightedAvg(id)).filter(a => a > 0);
 
     const first = studentAverages.length > 0 ? Math.max(...studentAverages) : 0;
     const last = studentAverages.length > 0 ? Math.min(...studentAverages) : 0;
-    const meOverall = myGrades.length > 0
-      ? myGrades.reduce((acc, curr) => acc + curr.moyenne, 0) / myGrades.length
-      : 0;
+    const meOverall = calculateWeightedAvg(student.id);
 
     setOverallStats({ first, last, me: meOverall });
   }, [student.id, student.classLevel, selectedTrimestre]);
@@ -112,7 +123,7 @@ export function StudentGradeView({ student }: { student: User }) {
           <CardContent className="p-6 flex items-center gap-4">
             <div className="bg-white/20 p-3 rounded-2xl"><TrendingUp className="w-6 h-6" /></div>
             <div>
-              <p className="text-xs font-bold uppercase opacity-80">Moyenne Générale</p>
+              <p className="text-xs font-bold uppercase opacity-80">Moyenne Générale Pondérée</p>
               <h3 className="text-3xl font-black">{overallStats.me.toFixed(2)} / 20</h3>
             </div>
           </CardContent>
@@ -192,7 +203,7 @@ export function StudentGradeView({ student }: { student: User }) {
                 <TableHead className="text-center text-emerald-600">Meilleure</TableHead>
                 <TableHead className="text-center text-red-600">Minimale</TableHead>
                 <TableHead className="text-center font-bold">Statut</TableHead>
-                <TableHead className="text-right pr-6">Coeff.</TableHead>
+                <TableHead className="text-right pr-6">Coeff. Actuel</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -204,7 +215,8 @@ export function StudentGradeView({ student }: { student: User }) {
                 </TableRow>
               ) : (
                 subjectStats.map((stat, idx) => {
-                  const originalGrade = grades.find(g => SUBJECTS.find(s => s.id === g.matiereId)?.name === stat.subject);
+                  const matiereId = SUBJECTS.find(s => s.name === stat.subject)?.id || '';
+                  const activeCoeff = getCoefficient(student.classLevel || 'N/A', matiereId);
                   
                   return (
                     <TableRow key={idx} className="hover:bg-slate-50/50 transition-colors group">
@@ -224,11 +236,11 @@ export function StudentGradeView({ student }: { student: User }) {
                       </TableCell>
                       <TableCell className="text-center">
                         <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-full bg-slate-100">
-                          {stat.me === stat.max ? "⭐ Major" : stat.me > 10 ? "Validé" : "À renforcer"}
+                          {stat.me === stat.max ? "⭐ Major" : stat.me >= 10 ? "Validé" : "À renforcer"}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right pr-6 text-xs font-black text-slate-400">
-                        x{originalGrade?.coefficient || '--'}
+                      <TableCell className="text-right pr-6 text-xs font-black text-emerald-700">
+                        x{activeCoeff}
                       </TableCell>
                     </TableRow>
                   );

@@ -4,7 +4,6 @@ import {
   ALL_CLASSES, SUBJECTS, Role, AbsenceRecord, DisciplineRecord, CoefficientEntry 
 } from './school-types';
 import { createAuditLog } from './audit';
-import { syncIdentitySystem } from './identity-manager';
 
 const KEYS = {
   USERS: 'edutrack_users',
@@ -34,15 +33,16 @@ export function saveToStorage<T>(key: string, data: T[]) {
  */
 export function getCoefficient(classLevel: string, subjectId: string): number {
   const coeffs = getFromStorage<CoefficientEntry>(KEYS.COEFFS);
+  // Recherche d'une valeur personnalisée par le Directeur pour cette classe précise
   const customEntry = coeffs.find(c => c.classLevel === classLevel && c.subjectId === subjectId);
   if (customEntry) return customEntry.value;
 
+  // Logique de coefficients par défaut (Bénin) si aucune personnalisation
   const isPremierCycle = ['6e', '5e', '4e', '3e'].some(c => classLevel.includes(c));
   const isSerieC = classLevel.includes(' C');
   const isSerieD = classLevel.includes(' D');
   const isSerieA = classLevel.includes(' A') || classLevel.includes(' B');
 
-  // Logique de coefficients par défaut (Bénin)
   const defaultCoeffs: Record<string, number> = {
     'math': isSerieC ? 6 : (isSerieD || isPremierCycle ? 4 : 2),
     'pc': isSerieC ? 5 : (isSerieD ? 4 : (isPremierCycle ? 2 : 1)),
@@ -175,7 +175,16 @@ export function getGlobalStats() {
   const payments = getFromStorage<PaymentRecord>(KEYS.PAYMENTS);
   const absences = getFromStorage<AbsenceRecord>(KEYS.ABSENCES);
 
-  const avg = grades.length > 0 ? grades.reduce((acc, curr) => acc + curr.moyenne, 0) / grades.length : 0;
+  // Calcul de la moyenne globale pondérée
+  let totalPoints = 0;
+  let totalCoeffs = 0;
+  
+  grades.forEach(g => {
+    totalPoints += (g.moyenne * g.coefficient);
+    totalCoeffs += g.coefficient;
+  });
+
+  const avg = totalCoeffs > 0 ? totalPoints / totalCoeffs : 0;
   const totalRevenue = payments.reduce((acc, curr) => acc + (curr.montant || 0), 0);
   const attendanceRate = students.length > 0 ? (98 - (absences.length / students.length * 0.5)).toFixed(1) + "%" : "100%";
 
