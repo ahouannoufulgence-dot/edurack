@@ -21,11 +21,16 @@ export function ScheduleManager({ user }: { user: User }) {
   const [isAdding, setIsAdding] = useState(false);
   const { toast } = useToast();
 
+  // Filtrer les matières disponibles si c'est un enseignant
+  const availableSubjects = user.role === 'Enseignant' 
+    ? SUBJECTS.filter(s => user.matieresAttribuees?.includes(s.id))
+    : SUBJECTS;
+
   const [newSlot, setNewSlot] = useState<Partial<EmploiDuTemps>>({
     jour: "Lundi",
     heureDebut: "07:00",
     heureFin: "09:00",
-    matiereId: "math",
+    matiereId: availableSubjects[0]?.id || "math",
     salle: "Salle 01"
   });
 
@@ -40,7 +45,6 @@ export function ScheduleManager({ user }: { user: User }) {
       return;
     }
     
-    // Calcul de l'heure de fin automatique (+2h par défaut)
     const hourNum = parseInt(newSlot.heureDebut.split(':')[0]);
     const endHour = `${(hourNum + 2).toString().padStart(2, '0')}:00`;
 
@@ -51,7 +55,7 @@ export function ScheduleManager({ user }: { user: User }) {
       heureDebut: newSlot.heureDebut!,
       heureFin: endHour,
       matiereId: newSlot.matiereId!,
-      enseignantId: SUBJECTS.find(s => s.id === newSlot.matiereId)?.enseignantId || "",
+      enseignantId: user.role === 'Enseignant' ? user.id : (SUBJECTS.find(s => s.id === newSlot.matiereId)?.enseignantId || ""),
       salle: newSlot.salle || "N/A"
     };
 
@@ -75,13 +79,15 @@ export function ScheduleManager({ user }: { user: User }) {
     return classSchedules.find(s => s.jour === day && s.heureDebut === hour);
   };
 
+  const canEdit = user.role === 'Directeur' || user.role === 'Enseignant';
+
   const openFormForCell = (day: string, hour: string) => {
-    if (user.role !== 'Directeur') return;
+    if (!canEdit) return;
     setNewSlot({
       ...newSlot,
       jour: day,
       heureDebut: hour,
-      matiereId: SUBJECTS[0].id,
+      matiereId: availableSubjects[0]?.id || "math",
       salle: "Salle 01"
     });
     setIsAdding(true);
@@ -94,7 +100,9 @@ export function ScheduleManager({ user }: { user: User }) {
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Calendar className="w-6 h-6 text-emerald-700" /> Gestion du Temps Scolaire
           </h2>
-          <p className="text-sm text-muted-foreground">Cliquez sur une case pour programmer un cours ({selectedClass}).</p>
+          <p className="text-sm text-muted-foreground">
+            {canEdit ? "Cliquez sur une case pour programmer un cours." : "Consultez l'organisation des cours."} ({selectedClass})
+          </p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
           <Select value={selectedClass} onValueChange={setSelectedClass}>
@@ -105,7 +113,7 @@ export function ScheduleManager({ user }: { user: User }) {
               {ALL_CLASSES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
-          {user.role === 'Directeur' && (
+          {canEdit && (
             <Button onClick={() => setIsAdding(!isAdding)} className="bg-emerald-700 hover:bg-emerald-800 gap-2 h-11 rounded-xl px-6 shadow-md transition-all active:scale-95">
               <Plus className="w-4 h-4" /> {isAdding ? "Fermer" : "Programmer"}
             </Button>
@@ -113,7 +121,7 @@ export function ScheduleManager({ user }: { user: User }) {
         </div>
       </div>
 
-      {isAdding && user.role === 'Directeur' && (
+      {isAdding && canEdit && (
         <Card className="border-emerald-200 bg-emerald-50/50 animate-in slide-in-from-top duration-300 border-2">
           <CardContent className="p-6">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
@@ -121,7 +129,10 @@ export function ScheduleManager({ user }: { user: User }) {
                 <label className="text-[10px] font-black uppercase text-emerald-800">Matière</label>
                 <Select value={newSlot.matiereId} onValueChange={v => setNewSlot({...newSlot, matiereId: v})}>
                   <SelectTrigger className="bg-white border-emerald-100"><SelectValue /></SelectTrigger>
-                  <SelectContent>{SUBJECTS.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                  <SelectContent>
+                    {availableSubjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    {availableSubjects.length === 0 && <SelectItem value="none" disabled>Aucune matière attribuée</SelectItem>}
+                  </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
@@ -143,7 +154,13 @@ export function ScheduleManager({ user }: { user: User }) {
                 <Input value={newSlot.salle} onChange={e => setNewSlot({...newSlot, salle: e.target.value})} className="bg-white border-emerald-100" placeholder="ex: Salle 01" />
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleAddSlot} className="flex-1 bg-emerald-700 h-10 font-bold shadow-sm">Valider le créneau</Button>
+                <Button 
+                  onClick={handleAddSlot} 
+                  className="flex-1 bg-emerald-700 h-10 font-bold shadow-sm"
+                  disabled={user.role === 'Enseignant' && availableSubjects.length === 0}
+                >
+                  Valider le créneau
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -177,7 +194,7 @@ export function ScheduleManager({ user }: { user: User }) {
                       onClick={() => !slot && openFormForCell(day, hour)}
                       className={cn(
                         "p-2 border-r relative group/slot transition-all flex flex-col items-center justify-center text-center",
-                        slot ? "bg-emerald-50/60 shadow-inner" : (user.role === 'Directeur' ? "hover:bg-emerald-50/30 cursor-pointer" : "")
+                        slot ? "bg-emerald-50/60 shadow-inner" : (canEdit ? "hover:bg-emerald-50/30 cursor-pointer" : "")
                       )}
                     >
                       {slot ? (
@@ -188,7 +205,7 @@ export function ScheduleManager({ user }: { user: User }) {
                           <div className="flex items-center justify-center gap-1 text-[9px] text-emerald-600 font-bold">
                             <MapPin className="w-2.5 h-2.5" /> {slot.salle}
                           </div>
-                          {user.role === 'Directeur' && (
+                          {canEdit && (
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -201,7 +218,7 @@ export function ScheduleManager({ user }: { user: User }) {
                           )}
                         </div>
                       ) : (
-                        user.role === 'Directeur' && (
+                        canEdit && (
                           <div className="opacity-0 group-hover/slot:opacity-100 flex flex-col items-center gap-1">
                             <Plus className="w-4 h-4 text-emerald-300" />
                             <span className="text-[8px] font-black text-emerald-400 uppercase">Ajouter</span>
@@ -224,7 +241,9 @@ export function ScheduleManager({ user }: { user: User }) {
         </div>
         <div className="flex items-center gap-2 text-emerald-700">
           <AlertCircle className="w-3 h-3" />
-          <span className="text-[10px] font-bold uppercase tracking-widest">Astuce : Cliquez sur une case vide pour remplir plus vite</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest">
+            {canEdit ? "Astuce : Cliquez sur une case vide pour remplir plus vite" : "L'emploi du temps est géré par l'administration et les professeurs"}
+          </span>
         </div>
         <div className="flex-1" />
         <div className="flex items-center gap-2">
