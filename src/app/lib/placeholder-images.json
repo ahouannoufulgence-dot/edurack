@@ -33,9 +33,9 @@
     },
     {
       "id": "login-bg",
-      "description": "Élèves souriants en classe travaillant ensemble",
-      "imageUrl": "https://picsum.photos/seed/edutrack-school-life/1920/1080",
-      "imageHint": "students classroom"
+      "description": "Étudiants africains souriants en uniforme utilisant un ordinateur portable en classe",
+      "imageUrl": "https://images.unsplash.com/photo-1523050853064-8521a24d5257?q=80&w=1920&h=1080&auto=format&fit=crop",
+      "imageHint": "african students classroom"
     },
     {
       "id": "activation-bg",
