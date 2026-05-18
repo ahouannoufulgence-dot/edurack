@@ -108,7 +108,11 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex flex-col gap-2 text-center text-[10px] text-muted-foreground bg-slate-50 p-4 border-t">
           <p>© 2024 EduTrack Pro - Système Anti-Fraude Actif</p>
-          <p className="italic">Note : Utilisez le mot de passe "admin" pour tester.</p>
+          <div className="mt-2 text-[9px] space-y-1 italic bg-emerald-50 p-2 rounded border border-emerald-100">
+            <p>Directeur : DIR-001 / Admin2026</p>
+            <p>Professeur : ENS-MATH-001 / Prof2026</p>
+            <p>Élève : ELV-3D-001 / Eleve2026</p>
+          </div>
         </CardFooter>
       </Card>
     </div>
