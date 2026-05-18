@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getFromStorage, addPayment } from "@/lib/data-service";
+import { getCurrentUser } from "@/lib/auth-service";
 import { PaymentRecord, User } from "@/lib/school-types";
 import { CreditCard, Plus, QrCode, Search, TrendingUp, Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -26,9 +27,14 @@ export function PaymentManager({ user }: { user: User }) {
   });
 
   useEffect(() => {
-    setPayments(getFromStorage<PaymentRecord>('edutrack_payments'));
-    setStudents(getFromStorage<User>('edutrack_users').filter(u => u.role === 'Eleve'));
-  }, []);
+    const allPayments = getFromStorage<PaymentRecord>('edutrack_payments');
+    if (user.role === 'Eleve') {
+      setPayments(allPayments.filter(p => p.eleveId === user.id));
+    } else {
+      setPayments(allPayments);
+      setStudents(getFromStorage<User>('edutrack_users').filter(u => u.role === 'Eleve'));
+    }
+  }, [user.id, user.role]);
 
   const handleAdd = () => {
     if (!newPayment.eleveId || newPayment.montant <= 0) {
@@ -41,17 +47,18 @@ export function PaymentManager({ user }: { user: User }) {
     toast({ title: "Paiement enregistré", description: "Le reçu a été généré avec succès." });
   };
 
+  const isEleve = user.role === 'Eleve';
   const filtered = payments.filter(p => p.eleveId.toLowerCase().includes(search.toLowerCase()));
   const totalCollected = payments.reduce((acc, curr) => acc + curr.montant, 0);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-emerald-600 text-white border-none shadow-lg">
           <CardContent className="p-6 flex items-center gap-4">
             <div className="bg-white/20 p-3 rounded-2xl"><TrendingUp className="w-6 h-6" /></div>
             <div>
-              <p className="text-xs font-bold uppercase opacity-80">Recettes Totales</p>
+              <p className="text-xs font-bold uppercase opacity-80">{isEleve ? "Total Versé" : "Recettes Totales"}</p>
               <h3 className="text-2xl font-black">{totalCollected.toLocaleString()} FCFA</h3>
             </div>
           </CardContent>
@@ -106,16 +113,18 @@ export function PaymentManager({ user }: { user: User }) {
 
         <Card className={user.role === 'Directeur' ? "lg:col-span-3 border-none shadow-md" : "lg:col-span-4 border-none shadow-md"}>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Historique des Transactions</CardTitle>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input 
-                placeholder="Chercher ID élève..." 
-                className="pl-9 h-9"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-            </div>
+            <CardTitle className="text-lg">{isEleve ? "Mes Versements" : "Historique des Transactions"}</CardTitle>
+            {!isEleve && (
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Chercher ID élève..." 
+                  className="pl-9 h-9"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
+            )}
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -133,13 +142,18 @@ export function PaymentManager({ user }: { user: User }) {
                 {filtered.map(p => (
                   <TableRow key={p.paiementId}>
                     <TableCell className="pl-6 font-mono font-bold text-xs">{p.paiementId}</TableCell>
-                    <TableCell className="font-bold">{students.find(s => s.id === p.eleveId)?.name || p.eleveId}</TableCell>
+                    <TableCell className="font-bold">{isEleve ? user.name : (students.find(s => s.id === p.eleveId)?.name || p.eleveId)}</TableCell>
                     <TableCell><Badge variant="secondary">{p.typePaiement || 'Scolarité'}</Badge></TableCell>
                     <TableCell className="font-black text-emerald-700">{p.montant.toLocaleString()} FCFA</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{new Date(p.datePaiement).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right pr-6"><QrCode className="w-5 h-5 text-slate-400 inline cursor-pointer hover:text-emerald-600" /></TableCell>
                   </TableRow>
                 ))}
+                {filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground italic">Aucune transaction trouvée.</TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>

@@ -9,6 +9,7 @@ import { CoefficientConfig } from '@/components/grades/coefficient-config';
 import { UserGuide } from '@/components/dashboard/user-guide';
 import { StudentManager } from '@/components/students/student-manager';
 import { GradeManager } from '@/components/grades/grade-manager';
+import { StudentGradeView } from '@/components/grades/student-grade-view';
 import { DisciplineManager } from '@/components/discipline/discipline-manager';
 import { ScheduleManager } from '@/components/schedule/schedule-manager';
 import { PaymentManager } from '@/components/payments/payment-manager';
@@ -60,77 +61,91 @@ export default function EduTrackApp() {
             
             <StatsGrid role={user.role} />
 
-            <div className="grid lg:grid-cols-3 gap-8">
-              <Card className="lg:col-span-2 border-none shadow-md overflow-hidden">
-                <CardHeader className="flex flex-row items-center justify-between bg-white border-b py-4">
-                  <CardTitle className="text-lg">Derniers Élèves Inscrits</CardTitle>
-                  <Button variant="link" size="sm" onClick={() => setActiveModule('students')}>Voir tout</Button>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader className="bg-secondary/20">
-                      <TableRow>
-                        <TableHead className="pl-6">Identifiant / Nom</TableHead>
-                        <TableHead>Classe</TableHead>
-                        <TableHead className="text-right pr-6">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {getFromStorage<User>('edutrack_users').filter(u => u.role === 'Eleve').slice(-5).map((student) => (
-                        <TableRow 
-                          key={student.id} 
-                          className="group cursor-pointer hover:bg-emerald-50/50"
-                          onClick={() => {
-                            setSelectedStudent(student);
-                            setActiveModule('ai-analyst');
-                          }}
-                        >
-                          <TableCell className="pl-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="w-8 h-8">
-                                <AvatarFallback>{student.name[0]}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium group-hover:text-emerald-deep transition-colors leading-none">{student.name}</p>
-                                <p className="text-[10px] text-muted-foreground mt-1 font-mono">{student.id}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell><Badge variant="outline" className="font-normal">{student.classLevel}</Badge></TableCell>
-                          <TableCell className="text-right pr-6">
-                            <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </TableCell>
+            {user.role !== 'Eleve' && (
+              <div className="grid lg:grid-cols-3 gap-8">
+                <Card className="lg:col-span-2 border-none shadow-md overflow-hidden">
+                  <CardHeader className="flex flex-row items-center justify-between bg-white border-b py-4">
+                    <CardTitle className="text-lg">Derniers Élèves Inscrits</CardTitle>
+                    <Button variant="link" size="sm" onClick={() => setActiveModule('students')}>Voir tout</Button>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader className="bg-secondary/20">
+                        <TableRow>
+                          <TableHead className="pl-6">Identifiant / Nom</TableHead>
+                          <TableHead>Classe</TableHead>
+                          <TableHead className="text-right pr-6">Action</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-
-              <div className="space-y-8">
-                <Card className="border-none shadow-md">
-                  <CardHeader><CardTitle className="text-lg">Alertes Sécurité</CardTitle></CardHeader>
-                  <CardContent className="space-y-4">
-                    {getFromStorage<any>('edutrack_audit_logs').filter(l => l.severity === 'high' || l.severity === 'critical').slice(0, 3).map((l: any, i: number) => (
-                      <div key={i} className="flex gap-3 items-start border-b pb-3 last:border-0">
-                         <div className="bg-red-100 p-2 rounded-lg"><Lock className="w-4 h-4 text-red-600" /></div>
-                         <div>
-                            <p className="text-xs font-bold text-red-900">{l.action}</p>
-                            <p className="text-[10px] text-muted-foreground">{l.details}</p>
-                         </div>
-                      </div>
-                    ))}
+                      </TableHeader>
+                      <TableBody>
+                        {getFromStorage<User>('edutrack_users').filter(u => u.role === 'Eleve').slice(-5).map((student) => (
+                          <TableRow 
+                            key={student.id} 
+                            className="group cursor-pointer hover:bg-emerald-50/50"
+                            onClick={() => {
+                              setSelectedStudent(student);
+                              setActiveModule('ai-analyst');
+                            }}
+                          >
+                            <TableCell className="pl-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="w-8 h-8">
+                                  <AvatarFallback>{student.name[0]}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-medium group-hover:text-emerald-deep transition-colors leading-none">{student.name}</p>
+                                  <p className="text-[10px] text-muted-foreground mt-1 font-mono">{student.id}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell><Badge variant="outline" className="font-normal">{student.classLevel}</Badge></TableCell>
+                            <TableCell className="text-right pr-6">
+                              <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </CardContent>
                 </Card>
+
+                <div className="space-y-8">
+                  <Card className="border-none shadow-md">
+                    <CardHeader><CardTitle className="text-lg">Alertes Sécurité</CardTitle></CardHeader>
+                    <CardContent className="space-y-4">
+                      {getFromStorage<any>('edutrack_audit_logs').filter(l => l.severity === 'high' || l.severity === 'critical').slice(0, 3).map((l: any, i: number) => (
+                        <div key={i} className="flex gap-3 items-start border-b pb-3 last:border-0">
+                           <div className="bg-red-100 p-2 rounded-lg"><Lock className="w-4 h-4 text-red-600" /></div>
+                           <div>
+                              <p className="text-xs font-bold text-red-900">{l.action}</p>
+                              <p className="text-[10px] text-muted-foreground">{l.details}</p>
+                           </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
-            </div>
+            )}
+            
+            {user.role === 'Eleve' && (
+              <Card className="border-none shadow-md bg-emerald-deep text-white">
+                <CardHeader>
+                  <CardTitle>Bienvenue sur ton espace EduTrack</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="opacity-80">Consulte tes notes, ton emploi du temps et tes absences en toute sécurité. Les résultats sont validés par tes professeurs.</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         );
 
       case 'security': return <SecurityDashboard />;
       case 'inscriptions': return <TokenGenerator />;
       case 'students': return <StudentManager />;
-      case 'grades': return <GradeManager user={user} />;
+      case 'grades': 
+        return user.role === 'Eleve' ? <StudentGradeView student={user} /> : <GradeManager user={user} />;
       case 'absences': return <DisciplineManager />;
       case 'schedule': return <ScheduleManager user={user} />;
       case 'settings': return <CoefficientConfig />;
@@ -138,12 +153,15 @@ export default function EduTrackApp() {
       case 'messaging': return <MessagingCenter currentUser={user} />;
       case 'payments': return <PaymentManager user={user} />;
       case 'ai-analyst':
-        return selectedStudent ? (
+        const studentToAnalyze = user.role === 'Eleve' ? user : selectedStudent;
+        return studentToAnalyze ? (
           <div className="space-y-6">
-            <Button variant="ghost" className="gap-2" onClick={() => setSelectedStudent(null)}>
-              <ChevronRight className="w-4 h-4 rotate-180" /> Retour à la liste
-            </Button>
-            <RemediationReport student={selectedStudent} />
+            {user.role !== 'Eleve' && (
+              <Button variant="ghost" className="gap-2" onClick={() => setSelectedStudent(null)}>
+                <ChevronRight className="w-4 h-4 rotate-180" /> Retour à la liste
+              </Button>
+            )}
+            <RemediationReport student={studentToAnalyze} />
           </div>
         ) : (
           <div className="text-center py-20 space-y-4">
