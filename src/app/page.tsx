@@ -41,6 +41,11 @@ export default function EduTrackApp() {
 
   if (!user) return null;
 
+  const handleSearchSelect = (student: User) => {
+    setSelectedStudent(student);
+    setActiveModule('ai-analyst');
+  };
+
   const renderModule = () => {
     switch (activeModule) {
       case 'dashboard':
@@ -167,7 +172,7 @@ export default function EduTrackApp() {
           <div className="text-center py-20 space-y-4">
             <BrainCircuit className="w-16 h-16 mx-auto text-muted-foreground/20" />
             <h2 className="text-xl font-bold">Analyse Pédagogique IA</h2>
-            <p className="text-muted-foreground">Sélectionnez un élève dans le tableau de bord pour lancer l'analyse.</p>
+            <p className="text-muted-foreground">Sélectionnez un élève dans le tableau de bord ou recherchez-le pour lancer l'analyse.</p>
           </div>
         );
 
@@ -182,7 +187,12 @@ export default function EduTrackApp() {
   };
 
   return (
-    <AppLayout activeModule={activeModule} setActiveModule={setActiveModule} user={user}>
+    <AppLayout 
+      activeModule={activeModule} 
+      setActiveModule={setActiveModule} 
+      user={user}
+      onSearchSelect={handleSearchSelect}
+    >
       {renderModule()}
     </AppLayout>
   );

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { 
   LayoutDashboard, 
@@ -21,20 +21,23 @@ import {
   ShieldAlert,
   UserPlus,
   HelpCircle,
-  Activity
+  Activity,
+  User as UserIcon,
+  ChevronRight
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Role, User } from "@/lib/school-types";
 import { cn } from "@/lib/utils";
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, logout } from '@/lib/auth-service';
-import { getUnreadMessageCount } from '@/lib/data-service';
+import { getUnreadMessageCount, getFromStorage } from '@/lib/data-service';
 
 interface AppLayoutProps {
   children: React.ReactNode;
   activeModule: string;
   setActiveModule: (m: string) => void;
   user?: User | null;
+  onSearchSelect?: (student: User) => void;
 }
 
 const MENU_ITEMS = [
@@ -52,9 +55,13 @@ const MENU_ITEMS = [
   { id: 'guide', label: 'Guide Utilisation', icon: HelpCircle, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
 ];
 
-export function AppLayout({ children, activeModule, setActiveModule, user }: AppLayoutProps) {
+export function AppLayout({ children, activeModule, setActiveModule, user, onSearchSelect }: AppLayoutProps) {
   const [scrolled, setScrolled] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const userRole = user?.role || 'Eleve';
 
@@ -71,33 +78,46 @@ export function AppLayout({ children, activeModule, setActiveModule, user }: App
 
   useEffect(() => {
     updateNotifications();
-    window.addEventListener('storage', updateNotifications);
-    return () => window.removeEventListener('storage', updateNotifications);
+    const handleStorage = () => updateNotifications();
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, [updateNotifications]);
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
-    const resetTimer = () => {
-      clearTimeout(timeout);
-      timeout = setTimeout(handleLogout, 30 * 60 * 1000); // 30 minutes d'inactivité
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
     };
-
-    window.addEventListener('mousemove', resetTimer);
-    window.addEventListener('keydown', resetTimer);
-    resetTimer();
-
-    return () => {
-      window.removeEventListener('mousemove', resetTimer);
-      window.removeEventListener('keydown', resetTimer);
-      clearTimeout(timeout);
-    };
-  }, [handleLogout]);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (query.length > 1) {
+      const allUsers = getFromStorage<User>('edutrack_users');
+      const results = allUsers.filter(u => 
+        u.name.toLowerCase().includes(query.toLowerCase()) || 
+        u.id.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 5);
+      setSearchResults(results);
+      setShowResults(true);
+    } else {
+      setShowResults(false);
+    }
+  };
+
+  const handleResultClick = (result: User) => {
+    setSearchQuery("");
+    setShowResults(false);
+    if (result.role === 'Eleve' && onSearchSelect) {
+      onSearchSelect(result);
+    } else if (result.role === 'Enseignant') {
+      setActiveModule('students'); // Ou un module prof si disponible
+    }
+  };
 
   const allowedMenuItems = MENU_ITEMS.filter(item => item.roles.includes(userRole));
 
@@ -159,13 +179,48 @@ export function AppLayout({ children, activeModule, setActiveModule, user }: App
           )}>
             <div className="flex items-center gap-4">
               <SidebarTrigger className="md:hidden" />
-              <div className="relative max-w-sm hidden sm:block">
+              <div className="relative max-w-sm hidden sm:block" ref={searchRef}>
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input 
                   type="text" 
-                  placeholder="Recherche sécurisée..." 
-                  className="bg-secondary/50 border-none rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary outline-none w-64 transition-all"
+                  placeholder="Recherche (Élève, ID...)" 
+                  className="bg-secondary/50 border-none rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none w-64 transition-all"
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  onFocus={() => searchQuery.length > 1 && setShowResults(true)}
                 />
+                
+                {showResults && (
+                  <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                    <div className="p-2 space-y-1">
+                      {searchResults.length > 0 ? (
+                        searchResults.map(result => (
+                          <button
+                            key={result.id}
+                            onClick={() => handleResultClick(result)}
+                            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors text-left group"
+                          >
+                            <Avatar className="w-8 h-8">
+                              <AvatarFallback className="text-[10px]">{result.name[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 overflow-hidden">
+                              <p className="text-sm font-bold truncate group-hover:text-emerald-700">{result.name}</p>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-mono text-muted-foreground">{result.id}</span>
+                                <span className="text-[9px] font-bold text-emerald-600 uppercase">{result.classLevel || result.role}</span>
+                              </div>
+                            </div>
+                            <ChevronRight className="w-3 h-3 text-slate-300 group-hover:text-emerald-500" />
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-8 text-center text-muted-foreground">
+                          <p className="text-xs font-medium">Aucun résultat trouvé</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
