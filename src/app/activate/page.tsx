@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,6 @@ import {
   CheckCircle2, 
   GraduationCap,
   Key,
-  Lock,
   Copy,
   UserCog,
   BookOpen,
@@ -30,7 +29,6 @@ export default function RegistrationPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [generatedId, setGeneratedId] = useState('');
-  const [activationToken, setActivationToken] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     tokenId: '',
@@ -54,13 +52,11 @@ export default function RegistrationPage() {
     if (formData.role === 'Eleve') {
       const result = verifyActivation(formData.tokenId);
       if (result.success) {
-        setActivationToken(result.token);
         setStep(2);
       } else {
         toast({ variant: "destructive", title: "Erreur", description: result.message });
       }
     } else {
-      // Pour les profs/directeurs, on passe directement à l'étape identité
       setStep(2);
     }
   };
@@ -101,9 +97,9 @@ export default function RegistrationPage() {
         
         setGeneratedId(finalId);
         setStep(3);
-        toast({ title: "Activation réussie", description: "Votre compte est désormais opérationnel." });
+        toast({ title: "Compte activé", description: "Vous pouvez maintenant vous connecter." });
       } catch (error) {
-        toast({ variant: "destructive", title: "Erreur", description: "Échec de la création du compte." });
+        toast({ variant: "destructive", title: "Erreur", description: "Échec de l'activation." });
       } finally {
         setLoading(false);
       }
@@ -165,23 +161,23 @@ export default function RegistrationPage() {
 
               {formData.role === 'Eleve' ? (
                 <div className="space-y-2">
-                  <Label className="font-bold">Code d'activation (fourni par l'école)</Label>
+                  <Label className="font-bold">Saisissez l'identifiant remis par l'école</Label>
                   <div className="relative">
                     <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <Input 
-                      placeholder="EDP-2025-XXXX-XXX" 
+                      placeholder="ELV-XXXX-XXX" 
                       className="h-12 pl-12 uppercase font-mono"
                       value={formData.tokenId} 
                       onChange={e => setFormData({...formData, tokenId: e.target.value})}
                       required 
                     />
                   </div>
-                  <p className="text-[10px] text-muted-foreground italic">Exemple: EDP-2025-6E1-001</p>
+                  <p className="text-[10px] text-muted-foreground italic">Exemple: ELV-6E1-001</p>
                 </div>
               ) : (
                 <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
                   <p className="text-xs text-blue-700 font-medium leading-relaxed">
-                    Les personnels administratifs et enseignants peuvent s'inscrire directement. Leurs identifiants seront générés automatiquement.
+                    Le personnel administratif et enseignant peut créer son compte directement.
                   </p>
                 </div>
               )}
@@ -243,8 +239,8 @@ export default function RegistrationPage() {
               </div>
 
               <div className="space-y-1">
-                <Label className="font-bold">Question secrète (Récupération)</Label>
-                <Input placeholder="Ex: Mon premier animal ?" value={formData.secretQuestion} onChange={e => setFormData({...formData, secretQuestion: e.target.value})} required />
+                <Label className="font-bold">Question secrète</Label>
+                <Input placeholder="Ex: Nom de mon premier chat ?" value={formData.secretQuestion} onChange={e => setFormData({...formData, secretQuestion: e.target.value})} required />
               </div>
               <div className="space-y-1">
                 <Label className="font-bold">Réponse</Label>
@@ -254,7 +250,7 @@ export default function RegistrationPage() {
               <div className="flex gap-2 pt-2">
                 <Button type="button" variant="ghost" onClick={() => setStep(1)} className="flex-1">Retour</Button>
                 <Button type="submit" className="flex-[2] bg-emerald-600 font-bold" disabled={loading}>
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Créer mon compte"}
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Finaliser l'activation"}
                 </Button>
               </div>
             </form>
@@ -266,8 +262,8 @@ export default function RegistrationPage() {
                 <CheckCircle2 className="w-10 h-10 text-emerald-600" />
               </div>
               <div>
-                <h2 className="text-xl font-black text-slate-800">Bienvenue dans EduTrack Pro !</h2>
-                <p className="text-sm text-slate-500 mt-2">Votre identifiant de connexion est prêt :</p>
+                <h2 className="text-xl font-black text-slate-800">Compte activé avec succès !</h2>
+                <p className="text-sm text-slate-500 mt-2">Utilisez l'identifiant suivant pour vous connecter :</p>
               </div>
               <div className="bg-slate-100 p-6 rounded-3xl border-2 border-dashed border-emerald-200 group relative">
                 <p className="text-3xl font-mono font-black text-emerald-700">{generatedId}</p>
@@ -276,7 +272,7 @@ export default function RegistrationPage() {
                 </Button>
               </div>
               <Button className="w-full bg-slate-900 h-12 rounded-xl font-bold" onClick={() => router.push('/login')}>
-                Se connecter maintenant
+                Aller à la page de connexion
               </Button>
             </div>
           )}

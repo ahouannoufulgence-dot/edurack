@@ -12,12 +12,11 @@ export function getTokens(): ActivationToken[] {
 
 export function resetTokens() {
   localStorage.removeItem(STORAGE_KEY);
-  generateBulkTokens('Tle D', 5);
+  generateBulkTokens('3e 1', 10);
 }
 
 export function generateBulkTokens(classLevel: ClassLevel, count: number): ActivationToken[] {
   const existingTokens = getTokens();
-  const year = new Date().getFullYear();
   const classCode = classLevel.replace(/\s/g, '').toUpperCase();
   
   const newTokens: ActivationToken[] = [];
@@ -28,14 +27,15 @@ export function generateBulkTokens(classLevel: ClassLevel, count: number): Activ
 
   for (let i = 1; i <= count; i++) {
     const sequence = (lastIndex + i).toString().padStart(3, '0');
-    const tokenId = `EDP-${year}-${classCode}-${sequence}`;
+    // Le code EST l'identifiant élève direct
+    const tokenId = `ELV-${classCode}-${sequence}`;
     
     newTokens.push({
       id: tokenId,
-      studentName: `En attente d'activation`,
+      studentName: `Libre - Prêt pour activation`,
       classLevel: classLevel,
-      birthDate: '', // Sera défini par l'élève
-      parentPhone: '', // Sera défini par l'élève
+      birthDate: '',
+      parentPhone: '',
       status: 'pending',
       attempts: 0
     });
@@ -48,7 +48,7 @@ export function generateBulkTokens(classLevel: ClassLevel, count: number): Activ
     'SYSTEM', 
     'Admin', 
     'TOKEN_GENERATION', 
-    `Génération spontanée de ${count} codes pour la classe ${classLevel}`,
+    `Génération d'identifiants spontanés pour la classe ${classLevel}`,
     null,
     { classLevel, count },
     'medium'
@@ -62,14 +62,14 @@ export function verifyActivation(tokenId: string): { success: boolean; message: 
   const token = tokens.find(t => t.id.toUpperCase() === tokenId.toUpperCase());
   
   if (!token) {
-    return { success: false, message: "Ce code d'activation n'existe pas." };
+    return { success: false, message: "Cet identifiant n'est pas encore provisionné par l'établissement." };
   }
   
   if (token.status === 'activated') {
-    return { success: false, message: "Ce code a déjà été utilisé pour un compte." };
+    return { success: false, message: "Cet identifiant est déjà activé et rattaché à un compte." };
   }
   
-  return { success: true, message: "Code valide.", token };
+  return { success: true, message: "Identifiant valide pour activation.", token };
 }
 
 export function completeActivation(tokenId: string, userData: { 
@@ -90,12 +90,11 @@ export function completeActivation(tokenId: string, userData: {
     token.activatedAt = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
     
-    // Création de l'utilisateur final
     const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
     const fullName = `${userData.prenom} ${userData.nom}`.toUpperCase();
     
-    // L'ID final est dérivé du code de jeton pour la cohérence
-    const finalId = token.id.replace('EDP-', 'ELV-');
+    // On utilise EXACTEMENT l'ID du token comme ID de l'utilisateur
+    const finalId = token.id;
 
     const newUser: User = {
       id: finalId,
@@ -118,14 +117,11 @@ export function completeActivation(tokenId: string, userData: {
     
     localStorage.setItem(USERS_KEY, JSON.stringify([...users, newUser]));
 
-    // Synchronisation pour s'assurer que l'ordre alphabétique est respecté si nécessaire
-    syncIdentitySystem(token.classLevel as ClassLevel);
-
     createAuditLog(
       finalId, 
       fullName, 
       'ACCOUNT_ACTIVATION', 
-      `Activation du code ${tokenId} réussie.`,
+      `Activation du compte ${finalId} terminée.`,
       null,
       null,
       'medium'
@@ -133,5 +129,5 @@ export function completeActivation(tokenId: string, userData: {
 
     return finalId;
   }
-  throw new Error("Token introuvable");
+  throw new Error("Identifiant introuvable");
 }
