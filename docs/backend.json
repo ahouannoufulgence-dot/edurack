@@ -1,0 +1,103 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "title": "Profil Utilisateur",
+      "description": "Informations de compte pour les directeurs, enseignants, parents et élèves.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identifiant unique (ex: DIR-001, ELV-001)" },
+        "name": { "type": "string", "description": "Nom complet" },
+        "role": { "type": "string", "enum": ["Directeur", "Enseignant", "Parent", "Eleve"] },
+        "email": { "type": "string", "format": "email" },
+        "photoUrl": { "type": "string" },
+        "subjectId": { "type": "string", "description": "Matière enseignée (pour les profs)" },
+        "studentId": { "type": "string", "description": "ID de l'élève rattaché (pour les parents)" },
+        "classLevel": { "type": "string", "description": "Classe de l'élève" }
+      },
+      "required": ["id", "name", "role"]
+    },
+    "Grade": {
+      "title": "Note Scolaire",
+      "description": "Enregistrement d'une note pour un élève.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "trimester": { "type": "string", "enum": ["T1", "T2", "T3"] },
+        "value": { "type": "number" },
+        "isValidated": { "type": "boolean" },
+        "isLocked": { "type": "boolean" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "subjectId", "trimester", "value"]
+    },
+    "AuditLog": {
+      "title": "Journal d'Audit",
+      "description": "Trace de sécurité pour chaque action sensible.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "ipAddress": { "type": "string" },
+        "deviceInfo": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ActivationToken": {
+      "title": "Jeton d'Activation",
+      "description": "Code pour l'inscription sécurisée des élèves.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentName": { "type": "string" },
+        "classLevel": { "type": "string" },
+        "birthDate": { "type": "string" },
+        "parentPhone": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "activated", "expired"] }
+      }
+    },
+    "Payment": {
+      "title": "Paiement",
+      "description": "Enregistrement des frais de scolarité.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "amount": { "type": "number" },
+        "receiptNumber": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "collectedBy": { "type": "string" }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["password"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Collection des profils utilisateurs."
+    },
+    "/grades/{gradeId}": {
+      "schema": "Grade",
+      "description": "Collection des notes des élèves."
+    },
+    "/auditLogs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Journal de sécurité immuable."
+    },
+    "/activationTokens/{tokenId}": {
+      "schema": "ActivationToken",
+      "description": "Jetons pour l'activation des comptes élèves."
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Suivi des transactions financières."
+    }
+  }
+}
