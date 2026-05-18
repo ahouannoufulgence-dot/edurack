@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Role, Student, ClassLevel } from '@/lib/school-types';
 import { StatsGrid } from '@/components/dashboard/stats-grid';
@@ -12,8 +12,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { RemediationReport } from '@/components/ai/remediation-report';
-import { FileText, ChevronRight, Filter, Download, Sparkles, BrainCircuit } from 'lucide-react';
+import { SecurityDashboard } from '@/components/security/security-dashboard';
+import { FileText, ChevronRight, Filter, Download, Sparkles, BrainCircuit, Lock, Unlock, ShieldAlert, QrCode } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { createAuditLog } from '@/lib/audit';
+import { useToast } from '@/hooks/use-toast';
 
 const MOCK_STUDENTS: Student[] = [
   { id: '1', name: 'Koffi ADEBAYO', classLevel: 'Terminale D', photoUrl: 'https://picsum.photos/seed/s1/100/100', conduct: 'Très bien', paymentStatus: 'A jour' },
@@ -26,6 +29,20 @@ export default function EduTrackApp() {
   const [activeModule, setActiveModule] = useState('dashboard');
   const [userRole, setUserRole] = useState<Role>('Directeur');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const { toast } = useToast();
+
+  // Redirection si URL interdite (Simulation)
+  useEffect(() => {
+    if (activeModule === 'security' && userRole !== 'Directeur') {
+      createAuditLog('user_123', userRole, 'ACCESS_DENIED', `Tentative d'accès au module Sécurité par un ${userRole}`, null, null, 'high');
+      setActiveModule('dashboard');
+      toast({
+        variant: 'destructive',
+        title: 'Accès Refusé',
+        description: 'Vous n\'avez pas les droits pour accéder à ce module.'
+      });
+    }
+  }, [activeModule, userRole, toast]);
 
   const renderModule = () => {
     switch (activeModule) {
@@ -34,8 +51,8 @@ export default function EduTrackApp() {
           <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex justify-between items-end">
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">Bonjour, M. le Directeur</h1>
-                <p className="text-muted-foreground mt-1">Voici l'aperçu de votre établissement pour aujourd'hui.</p>
+                <h1 className="text-3xl font-bold tracking-tight">Bonjour, M. le {userRole}</h1>
+                <p className="text-muted-foreground mt-1">Voici l'aperçu sécurisé de votre établissement.</p>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Rapport Global</Button>
@@ -57,8 +74,7 @@ export default function EduTrackApp() {
                       <TableRow>
                         <TableHead className="pl-6">Nom</TableHead>
                         <TableHead>Classe</TableHead>
-                        <TableHead>Conduite</TableHead>
-                        <TableHead>Paiement</TableHead>
+                        {userRole === 'Directeur' && <TableHead>Paiement</TableHead>}
                         <TableHead className="text-right pr-6">Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -79,22 +95,17 @@ export default function EduTrackApp() {
                             </div>
                           </TableCell>
                           <TableCell><Badge variant="outline" className="font-normal">{student.classLevel}</Badge></TableCell>
-                          <TableCell>
-                            <Badge className={
-                              student.conduct === 'Très bien' ? 'bg-emerald-deep' : 
-                              student.conduct === 'Bien' ? 'bg-accent' : 
-                              'bg-orange-500'
-                            }>{student.conduct}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <span className={cn(
-                              "text-xs font-bold",
-                              student.paymentStatus === 'A jour' ? 'text-emerald-deep' : 
-                              student.paymentStatus === 'Partiel' ? 'text-orange-500' : 'text-red-500'
-                            )}>
-                              {student.paymentStatus}
-                            </span>
-                          </TableCell>
+                          {userRole === 'Directeur' && (
+                            <TableCell>
+                              <span className={cn(
+                                "text-xs font-bold",
+                                student.paymentStatus === 'A jour' ? 'text-emerald-deep' : 
+                                student.paymentStatus === 'Partiel' ? 'text-orange-500' : 'text-red-500'
+                              )}>
+                                {student.paymentStatus}
+                              </span>
+                            </TableCell>
+                          )}
                           <TableCell className="text-right pr-6">
                             <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                           </TableCell>
@@ -114,8 +125,7 @@ export default function EduTrackApp() {
                   <CardContent className="space-y-4">
                     {[
                       { date: '12 Mars', event: 'Devoir de Math (T2)', class: 'Terminale D' },
-                      { date: '15 Mars', event: 'Conseil de Classe', class: 'Collège' },
-                      { date: '20 Mars', event: 'Clôture T2', class: 'Tous' }
+                      { date: '15 Mars', event: 'Conseil de Classe', class: 'Collège' }
                     ].map((ev, i) => (
                       <div key={i} className="flex gap-4 items-center">
                         <div className="bg-secondary/50 p-2 rounded-lg text-center min-w-[50px]">
@@ -131,21 +141,28 @@ export default function EduTrackApp() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-emerald-deep text-white border-none shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2"><Sparkles className="w-5 h-5" /> EduTrack AI</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-emerald-50 mb-4 leading-relaxed">
-                      L'IA a détecté une baisse de régime en Mathématiques chez 15% des élèves de 3ème.
-                    </p>
-                    <Button variant="secondary" size="sm" className="w-full font-bold">Voir l'Analyse</Button>
-                  </CardContent>
-                </Card>
+                {userRole === 'Directeur' && (
+                  <Card className="bg-red-600 text-white border-none shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2"><ShieldAlert className="w-5 h-5" /> Alertes Sécurité</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-red-50 mb-4 leading-relaxed">
+                        3 tentatives d'accès refusé détectées aujourd'hui.
+                      </p>
+                      <Button variant="secondary" size="sm" className="w-full font-bold" onClick={() => setActiveModule('security')}>
+                        Vérifier les Traces
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
           </div>
         );
+
+      case 'security':
+        return <SecurityDashboard />;
 
       case 'settings':
         return <CoefficientConfig />;
@@ -161,70 +178,115 @@ export default function EduTrackApp() {
         ) : (
           <div className="text-center py-20 space-y-4">
             <BrainCircuit className="w-16 h-16 mx-auto text-muted-foreground/20" />
-            <h2 className="text-xl font-bold">Sélectionnez un élève pour l'analyse</h2>
-            <p className="text-muted-foreground">Utilisez la liste du tableau de bord ou la gestion des élèves.</p>
-            <Button onClick={() => setActiveModule('dashboard')} className="bg-emerald-deep">Aller au Tableau de Bord</Button>
+            <h2 className="text-xl font-bold">Analyse Pédagogique IA</h2>
+            <p className="text-muted-foreground">Sélectionnez un élève pour lancer l'analyse.</p>
           </div>
         );
 
-      case 'students':
+      case 'payments':
         return (
-          <Card className="border-none shadow-md overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between border-b bg-white">
-              <CardTitle>Liste des Élèves</CardTitle>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">Exporter CSV</Button>
-                <Button size="sm" className="bg-emerald-deep">+ Nouvel Élève</Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="pl-6">Nom Complet</TableHead>
-                    <TableHead>Série/Classe</TableHead>
-                    <TableHead>Statut Frais</TableHead>
-                    <TableHead>Assiduité</TableHead>
-                    <TableHead className="text-right pr-6">Profil</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {MOCK_STUDENTS.map(s => (
-                    <TableRow key={s.id}>
-                      <TableCell className="pl-6">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8"><AvatarImage src={s.photoUrl} /></Avatar>
-                          <span className="font-semibold">{s.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell><Badge variant="secondary">{s.classLevel}</Badge></TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className={cn("w-2 h-2 rounded-full", s.paymentStatus === 'A jour' ? 'bg-emerald-500' : 'bg-orange-500')} />
-                          <span className="text-xs">{s.paymentStatus}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>98%</TableCell>
-                      <TableCell className="text-right pr-6">
-                        <Button variant="ghost" size="sm" onClick={() => { setSelectedStudent(s); setActiveModule('ai-analyst'); }}>Analyse IA</Button>
-                      </TableCell>
+          <div className="space-y-6 animate-in fade-in duration-500">
+             <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Gestion des Encaissements</h2>
+                <Button className="bg-emerald-deep">+ Nouveau Paiement</Button>
+             </div>
+             <Card>
+               <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>N° Reçu</TableHead>
+                        <TableHead>Élève</TableHead>
+                        <TableHead>Montant</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>QR Code</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {[
+                        { id: '1', num: 'REC-2024-001', student: 'Koffi ADEBAYO', amount: '150 000 FCFA', date: '01/03/2024' },
+                        { id: '2', num: 'REC-2024-002', student: 'Sena HOUNKPONOU', amount: '75 000 FCFA', date: '03/03/2024' },
+                      ].map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-bold">{p.num}</TableCell>
+                          <TableCell>{p.student}</TableCell>
+                          <TableCell>{p.amount}</TableCell>
+                          <TableCell>{p.date}</TableCell>
+                          <TableCell><QrCode className="w-6 h-6 text-muted-foreground" /></TableCell>
+                          <TableCell className="text-right">
+                             <Button variant="outline" size="sm">Imprimer Reçu</Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+               </CardContent>
+             </Card>
+          </div>
+        );
+
+      case 'grades':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Notes et Résultats</h2>
+              {userRole === 'Enseignant' && <Button className="bg-emerald-deep">Saisir des notes</Button>}
+            </div>
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Élève</TableHead>
+                      <TableHead>Matière</TableHead>
+                      <TableHead>Note</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Auteur</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-               </Table>
-            </CardContent>
-          </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {[
+                      { id: '1', name: 'Koffi ADEBAYO', sub: 'Mathématiques', val: 14.5, locked: true, author: 'M. Saliou' },
+                      { id: '2', name: 'Koffi ADEBAYO', sub: 'Français', val: 12.0, locked: false, author: 'Mme Gnonlonfin' },
+                    ].map((n) => (
+                      <TableRow key={n.id}>
+                        <TableCell className="font-medium">{n.name}</TableCell>
+                        <TableCell>{n.sub}</TableCell>
+                        <TableCell className="font-bold">{n.val}/20</TableCell>
+                        <TableCell>
+                          {n.locked ? (
+                            <Badge className="bg-emerald-600 gap-1"><Lock className="w-3 h-3" /> Verrouillée</Badge>
+                          ) : (
+                            <Badge variant="outline" className="gap-1 text-orange-600 border-orange-600"><Unlock className="w-3 h-3" /> Brouillon</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{n.author}</TableCell>
+                        <TableCell className="text-right">
+                          {n.locked ? (
+                             userRole === 'Directeur' ? <Button variant="ghost" size="sm">Déverrouiller</Button> : <span className="text-xs text-muted-foreground">Protégé</span>
+                          ) : (
+                            <Button variant="ghost" size="sm">Modifier</Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
         );
 
       default:
-        return (
+        return (activeModule === 'security' && userRole !== 'Directeur') ? null : (
           <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
             <div className="bg-secondary/50 p-6 rounded-full">
               <FileText className="w-12 h-12 text-muted-foreground" />
             </div>
-            <h2 className="text-2xl font-bold">Module en cours de développement</h2>
-            <p className="text-muted-foreground max-w-sm">Le module "{activeModule}" sera disponible dans la prochaine mise à jour.</p>
-            <Button onClick={() => setActiveModule('dashboard')} variant="outline">Retour au tableau de bord</Button>
+            <h2 className="text-2xl font-bold">Module en développement</h2>
+            <p className="text-muted-foreground">Bientôt disponible.</p>
           </div>
         );
     }

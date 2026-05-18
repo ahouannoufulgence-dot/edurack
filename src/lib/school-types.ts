@@ -29,14 +29,38 @@ export const CONDUCT_VALUES: Record<ConductGrade, number> = {
 };
 
 export type GradeEntry = {
+  id: string;
   studentId: string;
   subjectId: string;
   trimester: 'T1' | 'T2' | 'T3';
-  interros: (number | null)[]; // Up to 3
-  devoirs: (number | null)[];  // Up to 3
-  // Special French marks
-  comm?: number | null;
-  lecture?: number | null;
+  value: number;
+  isValidated: boolean;
+  isLocked: boolean;
+  lastModifiedBy: string;
+  lastModifiedAt: string;
+  authorName: string;
+};
+
+export type AuditLog = {
+  id: string;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  action: 'LOGIN' | 'GRADE_UPDATE' | 'GRADE_DELETE' | 'PAYMENT_RECORD' | 'ACCESS_DENIED';
+  details: string;
+  oldValue?: any;
+  newValue?: any;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+};
+
+export type PaymentRecord = {
+  id: string;
+  receiptNumber: string;
+  studentId: string;
+  amount: number;
+  date: string;
+  cashierId: string;
+  qrCodeData: string;
 };
 
 export type Student = {
@@ -46,6 +70,7 @@ export type Student = {
   photoUrl: string;
   conduct: ConductGrade;
   paymentStatus: 'A jour' | 'En retard' | 'Partiel';
+  parentId?: string;
 };
 
 export const SUBJECTS: Subject[] = [

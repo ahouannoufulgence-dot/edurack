@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { 
   LayoutDashboard, 
@@ -17,12 +17,15 @@ import {
   Search,
   LogOut,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  ShieldAlert,
+  Fingerprint
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Role } from "@/lib/school-types";
 import { cn } from "@/lib/utils";
+import { useRouter } from 'next/navigation';
+import { createAuditLog } from '@/lib/audit';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -33,19 +36,45 @@ interface AppLayoutProps {
 }
 
 const MENU_ITEMS = [
-  { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
-  { id: 'grades', label: 'Notes & Résultats', icon: FileText },
-  { id: 'students', label: 'Gestion Elèves', icon: UserRound },
-  { id: 'absences', label: 'Absences & Discipline', icon: Clock },
-  { id: 'schedule', label: 'Emploi du temps', icon: Calendar },
-  { id: 'payments', label: 'Paiements', icon: CreditCard },
-  { id: 'messaging', label: 'Messagerie', icon: MessageSquare },
-  { id: 'ai-analyst', label: 'Analyste IA', icon: Sparkles },
-  { id: 'settings', label: 'Paramètres', icon: Settings },
+  { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
+  { id: 'grades', label: 'Notes & Résultats', icon: FileText, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
+  { id: 'students', label: 'Gestion Elèves', icon: UserRound, roles: ['Directeur', 'Enseignant'] },
+  { id: 'absences', label: 'Absences & Discipline', icon: Clock, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
+  { id: 'schedule', label: 'Emploi du temps', icon: Calendar, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
+  { id: 'payments', label: 'Paiements', icon: CreditCard, roles: ['Directeur', 'Parent'] },
+  { id: 'messaging', label: 'Messagerie', icon: MessageSquare, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
+  { id: 'ai-analyst', label: 'Analyste IA', icon: Sparkles, roles: ['Directeur', 'Enseignant'] },
+  { id: 'security', label: 'Sécurité Anti-Fraude', icon: ShieldAlert, roles: ['Directeur'] },
+  { id: 'settings', label: 'Paramètres', icon: Settings, roles: ['Directeur'] },
 ];
 
 export function AppLayout({ children, activeModule, setActiveModule, userRole, setUserRole }: AppLayoutProps) {
   const [scrolled, setScrolled] = useState(false);
+  const router = useRouter();
+  
+  // Gestion de l'inactivité
+  const logout = useCallback(() => {
+    createAuditLog('user_123', userRole, 'LOGIN', 'Déconnexion automatique pour inactivité');
+    router.push('/login');
+  }, [router, userRole]);
+
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    const resetTimer = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(logout, 10 * 60 * 1000); // 10 minutes
+    };
+
+    window.addEventListener('mousemove', resetTimer);
+    window.addEventListener('keydown', resetTimer);
+    resetTimer();
+
+    return () => {
+      window.removeEventListener('mousemove', resetTimer);
+      window.removeEventListener('keydown', resetTimer);
+      clearTimeout(timeout);
+    };
+  }, [logout]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -53,10 +82,17 @@ export function AppLayout({ children, activeModule, setActiveModule, userRole, s
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Filtrer les menus par rôle
+  const allowedMenuItems = MENU_ITEMS.filter(item => item.roles.includes(userRole));
+
+  const handleLogout = () => {
+    createAuditLog('user_123', userRole, 'LOGIN', 'Déconnexion manuelle');
+    router.push('/login');
+  };
+
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex min-h-screen w-full bg-background font-body">
-        {/* Sidebar */}
         <Sidebar className="border-r border-sidebar-border w-[210px] bg-sidebar text-sidebar-foreground">
           <SidebarHeader className="p-6">
             <div className="flex items-center gap-3">
@@ -68,7 +104,7 @@ export function AppLayout({ children, activeModule, setActiveModule, userRole, s
           </SidebarHeader>
           <SidebarContent className="px-3">
             <SidebarMenu className="gap-1">
-              {MENU_ITEMS.map((item) => (
+              {allowedMenuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton 
                     onClick={() => setActiveModule(item.id)}
@@ -88,16 +124,17 @@ export function AppLayout({ children, activeModule, setActiveModule, userRole, s
             </SidebarMenu>
           </SidebarContent>
           <div className="mt-auto p-4 border-t border-sidebar-border">
-            <div className="flex items-center gap-3 px-2 py-3">
-              <LogOut className="w-4 h-4 text-sidebar-foreground/60" />
-              <span className="text-sm font-medium text-sidebar-foreground/60 cursor-pointer hover:text-white">Déconnexion</span>
-            </div>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-2 py-3 w-full text-left transition-colors hover:text-white group"
+            >
+              <LogOut className="w-4 h-4 text-sidebar-foreground/60 group-hover:text-white" />
+              <span className="text-sm font-medium text-sidebar-foreground/60 group-hover:text-white">Déconnexion</span>
+            </button>
           </div>
         </Sidebar>
 
-        {/* Main Content Area */}
         <SidebarInset className="flex-1 flex flex-col bg-background">
-          {/* Topbar */}
           <header className={cn(
             "sticky top-0 z-30 flex items-center justify-between px-6 py-3 transition-all duration-200 border-b",
             scrolled ? "bg-white/80 backdrop-blur-md shadow-sm border-border" : "bg-transparent border-transparent"
@@ -108,7 +145,7 @@ export function AppLayout({ children, activeModule, setActiveModule, userRole, s
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input 
                   type="text" 
-                  placeholder="Rechercher un élève, une classe..." 
+                  placeholder="Recherche sécurisée..." 
                   className="bg-secondary/50 border-none rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary outline-none w-64 transition-all"
                 />
               </div>
@@ -119,7 +156,11 @@ export function AppLayout({ children, activeModule, setActiveModule, userRole, s
                 {(['Directeur', 'Enseignant', 'Parent', 'Eleve'] as Role[]).map((role) => (
                   <button
                     key={role}
-                    onClick={() => setUserRole(role)}
+                    onClick={() => {
+                      setUserRole(role);
+                      setActiveModule('dashboard');
+                      createAuditLog('user_123', 'SYSTEM', 'LOGIN', `Changement de rôle vers ${role} (Simulation)`);
+                    }}
                     className={cn(
                       "px-3 py-1 rounded-full text-xs font-semibold transition-all",
                       userRole === role ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:bg-secondary"
@@ -137,12 +178,12 @@ export function AppLayout({ children, activeModule, setActiveModule, userRole, s
 
               <div className="flex items-center gap-3 pl-2 border-l">
                 <div className="text-right hidden sm:block">
-                  <p className="text-sm font-bold leading-none">M. Kouandété</p>
+                  <p className="text-sm font-bold leading-none">Utilisateur Test</p>
                   <p className="text-xs text-muted-foreground">{userRole}</p>
                 </div>
                 <Avatar className="w-9 h-9 border-2 border-primary/20">
                   <AvatarImage src="https://picsum.photos/seed/admin/100/100" />
-                  <AvatarFallback>AK</AvatarFallback>
+                  <AvatarFallback>UT</AvatarFallback>
                 </Avatar>
               </div>
             </div>
