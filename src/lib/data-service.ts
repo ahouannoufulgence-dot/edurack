@@ -1,7 +1,7 @@
 
 import { 
   User, Student, GradeRecord, PaymentRecord, ClassLevel, 
-  ALL_CLASSES, SUBJECTS 
+  ALL_CLASSES, SUBJECTS, Role 
 } from './school-types';
 import { createAuditLog } from './audit';
 import { syncIdentitySystem } from './identity-manager';
@@ -24,20 +24,25 @@ export function saveToStorage<T>(key: string, data: T[]) {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
-// INSCRIPTION ET ATTRIBUTION D'ID
-export function registerStudent(data: {
+/**
+ * Enregistre un nouvel utilisateur (Élève, Enseignant ou Directeur)
+ * et déclenche la synchronisation des identifiants.
+ */
+export function registerUser(data: {
+  role: Role;
   nom: string;
   prenom: string;
   sexe: 'M' | 'F';
-  classLevel: string;
-  password: string;
-  secretQuestion: string;
-  secretAnswer: string;
+  classLevel?: string;
+  subjectId?: string;
+  password?: string;
+  secretQuestion?: string;
+  secretAnswer?: string;
 }) {
-  const users = getFromStorage<User>(KEYS.USERS);
+  const users = getFromStorage<any>(KEYS.USERS);
   const fullName = `${data.prenom} ${data.nom}`.toUpperCase();
   
-  // 1. Créer un utilisateur temporaire
+  // 1. Créer un utilisateur avec un ID temporaire
   const tempId = `NEW-${Math.random().toString(36).substr(2, 5)}`;
   const newUser = {
     id: tempId,
@@ -47,49 +52,47 @@ export function registerStudent(data: {
     prenom: data.prenom,
     sexe: data.sexe,
     classLevel: data.classLevel,
-    role: 'Eleve',
-    password: data.password, // En environnement réel, ceci serait hashé
+    subjectId: data.subjectId,
+    role: data.role,
+    password: data.password || 'Pass1234',
     questionSecrete: data.secretQuestion,
     reponseSecrete: data.secretAnswer,
     statutCompte: 'actif',
     dateCreation: new Date().toISOString(),
-    premierAcces: false
-  } as any;
+    premierAcces: false,
+    idHistory: []
+  };
 
   saveToStorage(KEYS.USERS, [...users, newUser]);
   
-  // 2. Déclencher le recalcul alphabétique pour la classe
-  // Ceci va transformer l'ID TEMP en ELV-CLASSE-00X selon l'ordre alphabétique
-  syncIdentitySystem(data.classLevel);
+  // 2. Déclencher le recalcul global des identifiants selon les règles métiers
+  syncIdentitySystem(data.role === 'Eleve' ? (data.classLevel as ClassLevel) : undefined);
   
-  // 3. Récupérer l'identifiant final attribué
-  const updatedUsers = getFromStorage<User>(KEYS.USERS);
-  const finalUser = updatedUsers.find(u => u.name === fullName && u.classLevel === data.classLevel);
+  // 3. Récupérer l'identifiant final attribué par le système après tri
+  const updatedUsers = getFromStorage<any>(KEYS.USERS);
+  const finalUser = updatedUsers.find((u: any) => u.name === fullName && u.role === data.role);
   
-  createAuditLog(finalUser?.id || tempId, fullName, 'ACCOUNT_ACTIVATION', `Nouvel élève inscrit et ID attribué : ${finalUser?.id}`, null, finalUser, 'medium');
+  const finalId = finalUser?.id || tempId;
   
-  return finalUser?.id || tempId;
+  createAuditLog(
+    finalId, 
+    fullName, 
+    'ACCOUNT_ACTIVATION', 
+    `Inscription terminée pour le rôle ${data.role}. Identifiant final : ${finalId}`, 
+    null, 
+    finalUser, 
+    'medium'
+  );
+  
+  return finalId;
 }
 
 // GESTION DES ELEVES (ADMIN)
 export function addStudent(studentData: any) {
-  const users = getFromStorage<User>(KEYS.USERS);
-  
-  const newStudent = {
+  return registerUser({
     ...studentData,
-    id: `TEMP-${Math.random().toString(36).substr(2, 9)}`,
-    role: 'Eleve',
-    statutCompte: 'actif',
-    dateCreation: new Date().toISOString(),
-    premierAcces: true
-  } as User;
-
-  saveToStorage(KEYS.USERS, [...users, newStudent]);
-  
-  // Recalcul immédiat des IDs par ordre alphabétique
-  syncIdentitySystem(studentData.classLevel);
-  
-  createAuditLog('SYSTEM', 'Admin', 'ADD_STUDENT', `Nouvel élève ajouté : ${newStudent.name}`, null, newStudent, 'medium');
+    role: 'Eleve'
+  });
 }
 
 // GESTION DES NOTES
@@ -134,7 +137,8 @@ export function addPayment(payment: Partial<PaymentRecord>) {
 
 // CALCULS DASHBOARD
 export function getGlobalStats() {
-  const students = getFromStorage<User>(KEYS.USERS).filter(u => u.role === 'Eleve');
+  const users = getFromStorage<User>(KEYS.USERS);
+  const students = users.filter(u => u.role === 'Eleve');
   const grades = getFromStorage<GradeRecord>(KEYS.GRADES);
   const payments = getFromStorage<PaymentRecord>(KEYS.PAYMENTS);
 
