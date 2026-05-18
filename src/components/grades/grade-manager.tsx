@@ -9,89 +9,118 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ALL_CLASSES, SUBJECTS, User, GradeRecord } from "@/lib/school-types";
 import { getFromStorage, saveGrade } from "@/lib/data-service";
-import { calculateMoyenne } from "@/lib/school-logic";
-import { FileEdit, Save, CheckCircle, Search } from "lucide-react";
+import { calculateMoyenneComplex } from "@/lib/school-logic";
+import { FileEdit, Save, CheckCircle, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+type ScoreState = {
+  interros: string[];
+  devoirs: string[];
+  composition: string;
+};
 
 export function GradeManager({ user }: { user: User }) {
   const [selectedClass, setSelectedClass] = useState("3e 1");
   const [selectedSubject, setSelectedSubject] = useState(user.matieresAttribuees?.[0] || "math");
+  const [selectedTrimestre, setSelectedTrimestre] = useState<'T1' | 'T2' | 'T3'>('T1');
   const [students, setStudents] = useState<User[]>([]);
-  const [scores, setScores] = useState<Record<string, { devoir: string, composition: string }>>({});
+  const [scores, setScores] = useState<Record<string, ScoreState>>({});
   const { toast } = useToast();
 
   useEffect(() => {
-    // Charger les élèves de la classe
     const allUsers = getFromStorage<User>('edutrack_users');
     const filtered = allUsers.filter(u => u.role === 'Eleve' && u.classLevel === selectedClass);
     setStudents(filtered);
 
-    // Charger les notes déjà existantes
     const allGrades = getFromStorage<GradeRecord>('edutrack_grades');
-    const newScores: Record<string, { devoir: string, composition: string }> = {};
+    const newScores: Record<string, ScoreState> = {};
     
     filtered.forEach(student => {
       const existingGrade = allGrades.find(g => 
         g.eleveId === student.id && 
         g.matiereId === selectedSubject && 
-        g.trimestre === 'T1'
+        g.trimestre === selectedTrimestre
       );
+      
       if (existingGrade) {
         newScores[student.id] = {
-          devoir: existingGrade.devoir.toString(),
+          interros: existingGrade.interros.map(n => n?.toString() || ""),
+          devoirs: existingGrade.devoirs.map(n => n?.toString() || ""),
           composition: existingGrade.composition?.toString() || ""
         };
       } else {
-        newScores[student.id] = { devoir: "", composition: "" };
+        newScores[student.id] = { 
+          interros: ["", "", ""], 
+          devoirs: ["", "", ""], 
+          composition: "" 
+        };
       }
     });
     setScores(newScores);
-  }, [selectedClass, selectedSubject]);
+  }, [selectedClass, selectedSubject, selectedTrimestre]);
 
-  const handleScoreChange = (id: string, field: 'devoir' | 'composition', val: string) => {
-    setScores(prev => ({
-      ...prev,
-      [id]: { ...prev[id], [field]: val }
-    }));
+  const handleScoreChange = (id: string, group: 'interros' | 'devoirs' | 'composition', index: number, val: string) => {
+    setScores(prev => {
+      const current = prev[id] || { interros: ["", "", ""], devoirs: ["", "", ""], composition: "" };
+      if (group === 'composition') {
+        return { ...prev, [id]: { ...current, composition: val } };
+      }
+      const newArray = [...current[group]];
+      newArray[index] = val;
+      return { ...prev, [id]: { ...current, [group]: newArray } };
+    });
   };
 
   const handleSaveAll = () => {
     let count = 0;
-    Object.entries(scores).forEach(([studentId, vals]) => {
-      const dev = parseFloat(vals.devoir);
-      const comp = vals.composition ? parseFloat(vals.composition) : undefined;
+    Object.entries(scores).forEach(([studentId, s]) => {
+      const interros = s.interros.map(v => v === "" ? null : parseFloat(v));
+      const devoirs = s.devoirs.map(v => v === "" ? null : parseFloat(v));
+      const comp = s.composition === "" ? null : parseFloat(s.composition);
       
-      if (!isNaN(dev)) {
-        const moy = calculateMoyenne(dev, comp);
-        saveGrade({
-          eleveId: studentId,
-          classeId: selectedClass,
-          matiereId: selectedSubject,
-          enseignantId: user.id,
-          trimestre: 'T1',
-          devoir: dev,
-          composition: comp,
-          moyenne: moy,
-          coefficient: SUBJECTS.find(s => s.id === selectedSubject)?.coefficient || 1
-        });
-        count++;
-      }
+      const moy = calculateMoyenneComplex(interros, devoirs, comp);
+      
+      saveGrade({
+        eleveId: studentId,
+        classeId: selectedClass,
+        matiereId: selectedSubject,
+        enseignantId: user.id,
+        trimestre: selectedTrimestre,
+        interros,
+        devoirs,
+        composition: comp,
+        moyenne: moy,
+        coefficient: SUBJECTS.find(sub => sub.id === selectedSubject)?.coefficient || 1
+      });
+      count++;
     });
     
     toast({ 
       title: "Notes enregistrées", 
-      description: `${count} notes ont été mises à jour pour la classe ${selectedClass}.` 
+      description: `${count} dossiers mis à jour pour le ${selectedTrimestre} (${selectedClass}).` 
     });
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <FileEdit className="w-6 h-6 text-emerald-700" /> Saisie des Notes
-        </h2>
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <FileEdit className="w-6 h-6 text-emerald-700" /> Saisie Pédagogique
+          </h2>
+          <p className="text-xs text-muted-foreground">Régime : 3 Interros + 3 Devoirs + 1 Composition</p>
+        </div>
         <div className="flex flex-wrap gap-2">
+          <Select value={selectedTrimestre} onValueChange={(v: any) => setSelectedTrimestre(v)}>
+            <SelectTrigger className="w-28 bg-white"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="T1">1er Trim.</SelectItem>
+              <SelectItem value="T2">2ème Trim.</SelectItem>
+              <SelectItem value="T3">3ème Trim.</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={selectedClass} onValueChange={setSelectedClass}>
             <SelectTrigger className="w-32 bg-white"><SelectValue /></SelectTrigger>
             <SelectContent>{ALL_CLASSES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
@@ -101,78 +130,112 @@ export function GradeManager({ user }: { user: User }) {
             <SelectContent>{SUBJECTS.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
           </Select>
           <Button onClick={handleSaveAll} className="bg-emerald-700 hover:bg-emerald-800 gap-2 shadow-md">
-            <Save className="w-4 h-4" /> Enregistrer la saisie
+            <Save className="w-4 h-4" /> Sauvegarder
           </Button>
         </div>
       </div>
 
       <Card className="border-none shadow-xl overflow-hidden">
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
-                <TableHead className="pl-6 py-4">Élève</TableHead>
-                <TableHead className="w-32 text-center">Devoir (/20)</TableHead>
-                <TableHead className="w-32 text-center">Composition (/20)</TableHead>
-                <TableHead className="w-32 text-center">Moyenne</TableHead>
+                <TableHead className="pl-6 py-4 sticky left-0 bg-slate-50 z-20 w-48">Élève</TableHead>
+                <TableHead className="text-center bg-blue-50/30">Interrogations</TableHead>
+                <TableHead className="text-center bg-orange-50/30">Devoirs</TableHead>
+                <TableHead className="w-24 text-center">Comp.</TableHead>
+                <TableHead className="w-24 text-center font-bold">Moyenne</TableHead>
                 <TableHead className="text-right pr-6">Statut</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {students.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
-                    Aucun élève trouvé dans cette classe.
+                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground italic">
+                    Aucun élève trouvé.
                   </TableCell>
                 </TableRow>
               ) : (
                 students.map((student) => {
-                  const s = scores[student.id] || { devoir: "", composition: "" };
-                  const dev = parseFloat(s.devoir);
-                  const comp = s.composition ? parseFloat(s.composition) : undefined;
-                  const moy = calculateMoyenne(dev, comp);
+                  const s = scores[student.id] || { interros: ["", "", ""], devoirs: ["", "", ""], composition: "" };
+                  const interros = s.interros.map(v => v === "" ? null : parseFloat(v));
+                  const devoirs = s.devoirs.map(v => v === "" ? null : parseFloat(v));
+                  const comp = s.composition === "" ? null : parseFloat(s.composition);
+                  const moy = calculateMoyenneComplex(interros, devoirs, comp);
 
                   return (
                     <TableRow key={student.id} className="hover:bg-emerald-50/30 transition-colors">
-                      <TableCell className="pl-6 py-4">
-                        <p className="font-bold text-slate-800">{student.name}</p>
-                        <p className="text-[10px] font-mono text-muted-foreground">{student.id}</p>
+                      <TableCell className="pl-6 py-4 sticky left-0 bg-white group-hover:bg-emerald-50 transition-colors z-10 border-r">
+                        <p className="font-bold text-slate-800 truncate max-w-[150px]">{student.name}</p>
+                        <p className="text-[9px] font-mono text-muted-foreground">{student.id}</p>
                       </TableCell>
+                      
+                      {/* Interrogations */}
+                      <TableCell className="bg-blue-50/10">
+                        <div className="flex gap-1 justify-center">
+                          {[0, 1, 2].map(idx => (
+                            <Input 
+                              key={idx}
+                              type="number" min={0} max={20} step={0.25}
+                              value={s.interros[idx]} 
+                              onChange={e => handleScoreChange(student.id, 'interros', idx, e.target.value)}
+                              className="w-12 h-8 text-center text-xs p-1"
+                              placeholder={`I${idx+1}`}
+                            />
+                          ))}
+                        </div>
+                      </TableCell>
+
+                      {/* Devoirs */}
+                      <TableCell className="bg-orange-50/10">
+                        <div className="flex gap-1 justify-center">
+                          {[0, 1, 2].map(idx => (
+                            <Input 
+                              key={idx}
+                              type="number" min={0} max={20} step={0.25}
+                              value={s.devoirs[idx]} 
+                              onChange={e => handleScoreChange(student.id, 'devoirs', idx, e.target.value)}
+                              className="w-12 h-8 text-center text-xs p-1"
+                              placeholder={`D${idx+1}`}
+                            />
+                          ))}
+                        </div>
+                      </TableCell>
+
+                      {/* Composition */}
                       <TableCell>
                         <Input 
-                          type="number" 
-                          min={0} max={20} step={0.25}
-                          value={s.devoir} 
-                          onChange={e => handleScoreChange(student.id, 'devoir', e.target.value)}
-                          className="text-center font-bold bg-white"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input 
-                          type="number" 
-                          min={0} max={20} step={0.25}
+                          type="number" min={0} max={20} step={0.25}
                           value={s.composition} 
-                          onChange={e => handleScoreChange(student.id, 'composition', e.target.value)}
-                          className="text-center font-bold bg-white"
+                          onChange={e => handleScoreChange(student.id, 'composition', 0, e.target.value)}
+                          className="w-16 h-8 text-center font-bold"
+                          placeholder="C"
                         />
                       </TableCell>
+
                       <TableCell className="text-center">
-                        {(!isNaN(dev)) ? (
-                          <span className={`font-black text-lg ${moy >= 10 ? 'text-emerald-700' : 'text-red-600'}`}>
-                            {moy.toFixed(2)}
-                          </span>
-                        ) : '--'}
+                        <span className={`font-black text-base ${moy >= 10 ? 'text-emerald-700' : 'text-red-600'}`}>
+                          {moy > 0 ? moy.toFixed(2) : '--'}
+                        </span>
                       </TableCell>
+
                       <TableCell className="text-right pr-6">
-                        {(!isNaN(dev)) ? (
-                          <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-none gap-1">
-                            <CheckCircle className="w-3 h-3" /> Prêt
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-slate-400 gap-1 border-dashed">
-                             Saisie attendue
-                          </Badge>
-                        )}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex justify-end">
+                                {moy > 0 ? (
+                                  <CheckCircle className="w-5 h-5 text-emerald-500" />
+                                ) : (
+                                  <Info className="w-5 h-5 text-slate-300" />
+                                )}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {moy > 0 ? "Notes saisies" : "Saisie en attente"}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
                     </TableRow>
                   );
