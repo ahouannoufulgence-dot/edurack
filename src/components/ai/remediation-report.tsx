@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2, FileCheck, BrainCircuit, ArrowRight } from "lucide-react";
+import { Sparkles, Loader2, FileCheck, BrainCircuit, ArrowRight, Download } from "lucide-react";
 import { generateRemediationReport, GenerateRemediationReportOutput } from "@/ai/flows/generate-remediation-report";
 import { User, GradeRecord, SUBJECTS } from "@/lib/school-types";
 import { getFromStorage, getCoefficient } from "@/lib/data-service";
@@ -70,6 +70,102 @@ export function RemediationReport({ student }: AIReportProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleExportHtml = () => {
+    if (!report) return;
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${report.title} - ${student.name}</title>
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 40px; background-color: #f4f7f6; }
+          .report-card { background: white; padding: 40px; border-radius: 15px; shadow: 0 4px 6px rgba(0,0,0,0.1); border-top: 10px solid #1A6B4A; }
+          header { text-align: center; margin-bottom: 40px; }
+          h1 { color: #1A6B4A; margin-bottom: 10px; }
+          .meta { color: #666; font-size: 0.9em; margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+          section { margin-bottom: 30px; }
+          h2 { color: #1A6B4A; font-size: 1.2em; border-left: 4px solid #4A9649; padding-left: 15px; margin-bottom: 15px; }
+          .assessment { font-style: italic; color: #555; background: #f9f9f9; padding: 20px; border-radius: 8px; }
+          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+          .strengths { background: #e8f5e9; padding: 20px; border-radius: 8px; }
+          .improvements { background: #fff3e0; padding: 20px; border-radius: 8px; }
+          ul { padding-left: 20px; }
+          li { margin-bottom: 10px; }
+          .subject-detail { margin-bottom: 15px; }
+          .subject-name { font-weight: bold; color: #e65100; }
+          footer { text-align: center; margin-top: 50px; font-size: 0.8em; color: #999; }
+          @media print { body { background: white; padding: 0; } .report-card { border: none; shadow: none; } }
+        </style>
+      </head>
+      <body>
+        <div class="report-card">
+          <header>
+            <h1>EduTrack Pro</h1>
+            <p>Analyse Pédagogique Intelligente</p>
+          </header>
+          
+          <div class="meta">
+            <strong>Élève :</strong> ${student.name} | 
+            <strong>Classe :</strong> ${student.classLevel || 'N/A'} | 
+            <strong>ID :</strong> ${student.id}
+          </div>
+
+          <section>
+            <h2>${report.title}</h2>
+            <div class="assessment">${report.overallAssessment}</div>
+          </section>
+
+          <div class="grid">
+            <section class="strengths">
+              <h3>Points Forts</h3>
+              <ul>
+                ${report.strengths.map(s => `<li>${s}</li>`).join('')}
+              </ul>
+            </section>
+            
+            <section class="improvements">
+              <h3>Axes d'Amélioration</h3>
+              ${report.areasForImprovement.map(area => `
+                <div class="subject-detail">
+                  <div class="subject-name">${area.subject}</div>
+                  <div>${area.details}</div>
+                </div>
+              `).join('')}
+            </section>
+          </div>
+
+          <section>
+            <h2>Recommandations Générales</h2>
+            <p style="white-space: pre-line;">${report.generalRecommendations}</p>
+          </section>
+
+          <footer>
+            Document généré par EduTrack Pro IA - Vision Excellence Scolaire au Bénin
+          </footer>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Rapport_Remediation_${student.name.replace(/\s+/g, '_')}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Téléchargement lancé",
+      description: "Le rapport HTML a été généré avec succès."
+    });
   };
 
   return (
@@ -153,7 +249,9 @@ export function RemediationReport({ student }: AIReportProps) {
           </CardContent>
           <CardFooter className="bg-gray-50 rounded-b-lg border-t flex justify-between">
             <Button variant="ghost" onClick={() => setReport(null)}>Nouvelle Analyse</Button>
-            <Button variant="outline" className="gap-2">Exporter en PDF</Button>
+            <Button variant="outline" onClick={handleExportHtml} className="gap-2">
+              <Download className="w-4 h-4" /> Télécharger en HTML
+            </Button>
           </CardFooter>
         </Card>
       )}
