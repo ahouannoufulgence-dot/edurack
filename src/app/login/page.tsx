@@ -3,11 +3,23 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Eye, EyeOff, Loader2, Sparkles, User, QrCode, Lock, GraduationCap } from "lucide-react";
+import { 
+  Eye, 
+  EyeOff, 
+  Loader2, 
+  User, 
+  Lock, 
+  GraduationCap, 
+  ShieldCheck, 
+  BarChart3, 
+  MessageSquare, 
+  UserCircle 
+} from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { login, getCurrentUser } from '@/lib/auth-service';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +44,6 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     
-    // Simulate API call
     setTimeout(() => {
       const result = login(formData.userId, formData.password);
       if (result.success) {
@@ -46,7 +57,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center lg:justify-end px-4 lg:px-20 relative overflow-hidden font-body bg-slate-900">
+    <div className="min-h-screen w-full flex flex-col items-center justify-between py-12 px-4 relative overflow-hidden font-body bg-slate-900">
       {/* Background Image Wrapper */}
       <div className="absolute inset-0 z-0">
         {bgImage && (
@@ -59,48 +70,45 @@ export default function LoginPage() {
               priority
               data-ai-hint={bgImage.imageHint}
             />
-            {/* Voile sombre transparent rgba(0,0,0,0.35) */}
-            <div className="absolute inset-0 bg-black/35 z-10" />
+            <div className="absolute inset-0 bg-black/45 z-10" />
           </div>
         )}
       </div>
 
-      {/* Slogan motivant sur le fond */}
-      <div className="absolute left-12 bottom-12 z-20 hidden xl:block animate-in fade-in slide-in-from-left duration-1000">
-        <h2 className="text-white text-4xl font-bold drop-shadow-lg max-w-md leading-tight">
-          Apprendre aujourd'hui,<br />
-          <span className="text-accent">réussir demain.</span>
+      {/* Slogan Supérieur */}
+      <div className="relative z-20 text-center animate-in fade-in slide-in-from-top duration-1000">
+        <h2 className="text-white text-3xl md:text-5xl font-bold drop-shadow-lg leading-tight">
+          Apprendre aujourd'hui,<br />réussir demain
         </h2>
       </div>
 
-      {/* Login Card - Glassmorphism style */}
-      <Card className="w-full max-w-[440px] border-white/20 shadow-2xl bg-white/70 backdrop-blur-[12px] relative z-20 rounded-[24px] overflow-hidden animate-in fade-in zoom-in duration-700">
-        <CardHeader className="text-center pt-10 pb-4 flex flex-col items-center">
-          <div className="mb-6">
-            <div className="relative w-20 h-20 flex items-center justify-center bg-white rounded-2xl shadow-sm mb-4">
-              <GraduationCap className="w-12 h-12 text-primary" />
+      {/* Login Card - Glassmorphism exact style */}
+      <Card className="w-full max-w-[480px] border-white/20 shadow-2xl bg-white/10 backdrop-blur-[20px] relative z-20 rounded-[32px] overflow-hidden animate-in fade-in zoom-in duration-700">
+        <CardContent className="p-8 md:p-12 flex flex-col items-center">
+          {/* Logo Section */}
+          <div className="mb-8 flex flex-col items-center">
+            <div className="w-16 h-16 bg-emerald-700/80 rounded-2xl flex items-center justify-center shadow-lg mb-4 ring-1 ring-white/30">
+              <GraduationCap className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              EduTrack <span className="text-primary">Pro</span>
+            <h1 className="text-4xl font-bold tracking-tight text-white mb-1">
+              EduTrack <span className="text-emerald-400">Pro</span>
             </h1>
-            <p className="text-slate-600 text-sm mt-1">Gestion Scolaire Intelligente</p>
+            <p className="text-white/60 text-[10px] tracking-[0.2em] font-bold uppercase">Gestion Scolaire Intelligente</p>
           </div>
           
-          <div className="space-y-1">
-            <h3 className="text-slate-800 font-bold text-xl">Portail d'accès sécurisé</h3>
-            <p className="text-slate-500 text-sm">Connectez-vous pour accéder à votre espace</p>
+          <div className="text-center mb-8">
+            <h3 className="text-white font-bold text-xl mb-1">Accès Sécurisé</h3>
+            <p className="text-white/50 text-sm">Connectez-vous à votre espace</p>
           </div>
-        </CardHeader>
 
-        <CardContent className="px-10 pb-6 space-y-6">
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="w-full space-y-5">
             <div className="space-y-2">
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <div className="relative group">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-emerald-400 transition-colors" />
                 <Input 
                   id="userId" 
-                  placeholder="Identifiant Unique (DIR-001...)" 
-                  className="pl-12 h-14 bg-white/50 border-slate-200 rounded-xl focus:ring-primary text-slate-900 text-base"
+                  placeholder="Identifiant Unique" 
+                  className="pl-12 h-14 bg-white/10 border-white/20 rounded-2xl focus:ring-emerald-500 text-white placeholder:text-white/30 text-base transition-all"
                   value={formData.userId}
                   onChange={e => setFormData({...formData, userId: e.target.value})}
                   required 
@@ -109,21 +117,21 @@ export default function LoginPage() {
             </div>
             
             <div className="space-y-2">
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-emerald-400 transition-colors" />
                 <Input 
                   id="password" 
                   type={showPassword ? "text" : "password"} 
                   placeholder="Mot de passe"
                   required 
-                  className="pl-12 pr-12 h-14 bg-white/50 border-slate-200 rounded-xl focus:ring-primary text-slate-900 text-base"
+                  className="pl-12 pr-12 h-14 bg-white/10 border-white/20 rounded-2xl focus:ring-emerald-500 text-white placeholder:text-white/30 text-base transition-all"
                   value={formData.password}
                   onChange={e => setFormData({...formData, password: e.target.value})}
                 />
                 <button 
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary p-2"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-emerald-400 p-2 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -131,43 +139,55 @@ export default function LoginPage() {
             </div>
 
             <div className="flex justify-end">
-              <Button variant="link" className="px-0 text-sm text-primary h-auto font-semibold">Mot de passe oublié ?</Button>
+              <Button variant="link" className="px-0 text-emerald-400 text-xs h-auto font-medium hover:text-emerald-300">
+                Mot de passe oublié ?
+              </Button>
             </div>
 
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 h-14 rounded-xl text-white font-bold text-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-70" disabled={loading}>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="remember" className="border-white/20 data-[state=checked]:bg-emerald-600" />
+              <label htmlFor="remember" className="text-xs text-white/70 font-medium cursor-pointer">
+                Rester connecté
+              </label>
+            </div>
+
+            <Button type="submit" className="w-full bg-emerald-800 hover:bg-emerald-700 h-14 rounded-2xl text-white font-bold text-lg shadow-xl shadow-emerald-900/40 transition-all active:scale-[0.98] disabled:opacity-70 mt-4" disabled={loading}>
               {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Se connecter"}
             </Button>
-
-            <div className="relative flex items-center justify-center py-2">
-              <div className="w-full border-t border-slate-200" />
-              <span className="bg-white/0 backdrop-blur-none px-4 text-xs font-bold text-slate-400 absolute">OU</span>
-            </div>
-
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="w-full h-14 rounded-xl border-slate-200 bg-white/50 text-slate-700 hover:bg-white gap-3 font-semibold transition-all"
-            >
-              <QrCode className="w-5 h-5" /> Scanner QR Code
-            </Button>
           </form>
-        </CardContent>
 
-        <CardFooter className="flex flex-col gap-4 text-center p-8 pt-0">
-          <p className="text-slate-600 text-sm font-medium">Ensemble, construisons l'avenir 💚</p>
-          
-          <div className="w-full pt-6 border-t border-slate-200/50 flex flex-wrap justify-center gap-2">
-            <Badge variant="secondary" className="text-[10px] cursor-pointer hover:bg-emerald-100 py-1" onClick={() => setFormData({userId: 'DIR-001', password: 'Admin2026'})}>Directeur</Badge>
-            <Badge variant="secondary" className="text-[10px] cursor-pointer hover:bg-emerald-100 py-1" onClick={() => setFormData({userId: 'ELV-3D-001', password: 'Eleve2026'})}>Élève</Badge>
-            <Button variant="ghost" size="sm" className="text-primary text-[11px] font-bold h-8" onClick={() => router.push('/activate')}>
-              <Sparkles className="w-3 h-3 mr-1" /> Activer mon compte
-            </Button>
-          </div>
-        </CardFooter>
+          <p className="text-white/30 text-[10px] mt-12 font-medium">
+            © 2026 EduTrack Pro - Tous droits réservés
+          </p>
+        </CardContent>
       </Card>
-      
-      <div className="absolute bottom-6 left-8 text-white/60 text-[10px] z-20 font-mono hidden lg:block tracking-widest">
-        © 2024 EDUTRACK PRO // SYSTÈME SÉCURISÉ
+
+      {/* Pied de page - Caractéristiques */}
+      <div className="relative z-20 w-full max-w-6xl grid grid-cols-2 md:grid-cols-4 gap-6 px-4">
+        {[
+          { icon: ShieldCheck, title: "Sécurisé", desc: "Vos données sont protégées" },
+          { icon: BarChart3, title: "Performant", desc: "Des statistiques en temps réel" },
+          { icon: MessageSquare, title: "Connecté", desc: "Communication facile et rapide" },
+          { icon: UserCircle, title: "Accessible", desc: "Accessible partout, tout le temps" },
+        ].map((feat, i) => (
+          <div key={i} className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center ring-1 ring-white/10 group-hover:bg-emerald-500/20 transition-all">
+              <feat.icon className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-white font-bold text-sm leading-tight">{feat.title}</p>
+              <p className="text-white/40 text-[10px] leading-tight">{feat.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Demo shortcuts hidden in production but available for you */}
+      <div className="absolute bottom-4 right-4 z-30 opacity-20 hover:opacity-100 transition-opacity">
+        <div className="flex gap-2">
+          <Badge variant="outline" className="text-white cursor-pointer py-1" onClick={() => setFormData({userId: 'DIR-001', password: 'Admin2026'})}>Directeur</Badge>
+          <Badge variant="outline" className="text-white cursor-pointer py-1" onClick={() => setFormData({userId: 'ELV-3D-001', password: 'Eleve2026'})}>Élève</Badge>
+        </div>
       </div>
     </div>
   );

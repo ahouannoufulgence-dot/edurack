@@ -8,24 +8,6 @@
       "imageHint": "student portrait"
     },
     {
-      "id": "student-2",
-      "description": "Portrait d'élève 2",
-      "imageUrl": "https://picsum.photos/seed/s2/200/200",
-      "imageHint": "student portrait"
-    },
-    {
-      "id": "student-3",
-      "description": "Portrait d'élève 3",
-      "imageUrl": "https://picsum.photos/seed/s3/200/200",
-      "imageHint": "student portrait"
-    },
-    {
-      "id": "student-4",
-      "description": "Portrait d'élève 4",
-      "imageUrl": "https://picsum.photos/seed/s4/200/200",
-      "imageHint": "student portrait"
-    },
-    {
       "id": "school-banner",
       "description": "Bannière du campus scolaire",
       "imageUrl": "https://picsum.photos/seed/school/1200/400",
