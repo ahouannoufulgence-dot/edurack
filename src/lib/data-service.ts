@@ -1,7 +1,7 @@
 
 import { 
   User, GradeRecord, PaymentRecord, ClassLevel, 
-  ALL_CLASSES, SUBJECTS, Role, AbsenceRecord, DisciplineRecord 
+  ALL_CLASSES, SUBJECTS, Role, AbsenceRecord, DisciplineRecord, CoefficientEntry 
 } from './school-types';
 import { createAuditLog } from './audit';
 import { syncIdentitySystem } from './identity-manager';
@@ -13,7 +13,8 @@ const KEYS = {
   AUDIT: 'edutrack_audit_logs',
   ABSENCES: 'edutrack_absences',
   DISCIPLINE: 'edutrack_discipline',
-  MESSAGES: 'edutrack_messages'
+  MESSAGES: 'edutrack_messages',
+  COEFFS: 'edutrack_coeffs'
 };
 
 export function getFromStorage<T>(key: string): T[] {
@@ -26,6 +27,47 @@ export function saveToStorage<T>(key: string, data: T[]) {
   if (typeof window === 'undefined') return;
   localStorage.setItem(key, JSON.stringify(data));
   window.dispatchEvent(new Event('storage'));
+}
+
+export function getCoefficient(classLevel: string, subjectId: string): number {
+  const coeffs = getFromStorage<CoefficientEntry>(KEYS.COEFFS);
+  const entry = coeffs.find(c => c.classLevel === classLevel && c.subjectId === subjectId);
+  if (entry) return entry.value;
+
+  // Fallback par défaut selon les standards béninois
+  const isSecondaire = !classLevel.includes('Tle') && !classLevel.includes('1ère') && !classLevel.includes('2nde');
+  const isSerieD = classLevel.includes('D');
+  const isSerieC = classLevel.includes('C');
+  const isSerieA = classLevel.includes('A') || classLevel.includes('B');
+
+  if (subjectId === 'math') {
+    if (isSerieC) return 6;
+    if (isSerieD || isSecondaire) return 4;
+    return 2;
+  }
+  if (subjectId === 'pc') {
+    if (isSerieC) return 5;
+    if (isSerieD) return 4;
+    if (isSecondaire) return 2;
+    return 1;
+  }
+  if (subjectId === 'svt') {
+    if (isSerieD) return 5;
+    if (isSecondaire) return 2;
+    return 1;
+  }
+  if (subjectId === 'fr') {
+    if (isSerieA) return 5;
+    return 4;
+  }
+  if (subjectId === 'philo') {
+    if (isSerieA) return 4;
+    return 2;
+  }
+  if (subjectId === 'ang') return 3;
+  if (subjectId === 'hg') return 2;
+  
+  return 1;
 }
 
 export function registerUser(data: {
@@ -67,7 +109,6 @@ export function registerUser(data: {
 
     saveToStorage(KEYS.USERS, [...users, newUser]);
     
-    // Déterminer la classe cible pour la synchro si c'est un élève
     const syncClass = data.role === 'Eleve' ? (data.classLevel as ClassLevel) : undefined;
     syncIdentitySystem(syncClass);
     
@@ -88,7 +129,6 @@ export function registerUser(data: {
   }
 }
 
-// Assurer l'existence de addStudent pour corriger l'erreur d'importation
 export function addStudent(data: any) {
   return registerUser({ ...data, role: 'Eleve' });
 }

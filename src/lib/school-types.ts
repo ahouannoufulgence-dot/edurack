@@ -63,14 +63,15 @@ export type DisciplineRecord = {
 };
 
 export type Subject = {
-  matiereId: string;
-  nom: string;
-  coefficient: number;
-  niveau: string;
-  enseignantId?: string;
-  category?: 'Scientifique' | 'Littéraire' | 'Autre';
   id: string; 
   name: string; 
+  category: 'Scientifique' | 'Littéraire' | 'Autre';
+};
+
+export type CoefficientEntry = {
+  classLevel: string;
+  subjectId: string;
+  value: number;
 };
 
 export const ALL_CLASSES: string[] = [
@@ -84,14 +85,17 @@ export const ALL_CLASSES: string[] = [
 ];
 
 export const SUBJECTS: Subject[] = [
-  { matiereId: 'math', id: 'math', nom: 'Mathématiques', name: 'Mathématiques', coefficient: 4, niveau: 'Tous', category: 'Scientifique' },
-  { matiereId: 'pc', id: 'pc', nom: 'Physique-Chimie', name: 'Physique-Chimie', coefficient: 4, niveau: 'Secondaire', category: 'Scientifique' },
-  { matiereId: 'svt', id: 'svt', nom: 'SVT', name: 'SVT', coefficient: 4, niveau: 'Secondaire', category: 'Scientifique' },
-  { matiereId: 'fr', id: 'fr', nom: 'Français', name: 'Français', coefficient: 4, niveau: 'Tous', category: 'Littéraire' },
-  { matiereId: 'hg', id: 'hg', nom: 'Histoire-Géo', name: 'Histoire-Géo', coefficient: 2, niveau: 'Tous', category: 'Littéraire' },
-  { matiereId: 'ang', id: 'ang', nom: 'Anglais', name: 'Anglais', coefficient: 3, niveau: 'Tous', category: 'Littéraire' },
-  { matiereId: 'philo', id: 'philo', nom: 'Philosophie', name: 'Philosophie', coefficient: 2, niveau: 'Lycée', category: 'Littéraire' },
-  { matiereId: 'eps', id: 'eps', nom: 'EPS', name: 'EPS', coefficient: 1, niveau: 'Tous', category: 'Autre' },
+  { id: 'math', name: 'Mathématiques', category: 'Scientifique' },
+  { id: 'pc', name: 'Physique-Chimie', category: 'Scientifique' },
+  { id: 'svt', name: 'SVT', category: 'Scientifique' },
+  { id: 'fr', name: 'Français', category: 'Littéraire' },
+  { id: 'hg', name: 'Histoire-Géo', category: 'Littéraire' },
+  { id: 'ang', name: 'Anglais', category: 'Littéraire' },
+  { id: 'philo', name: 'Philosophie', category: 'Littéraire' },
+  { id: 'eps', name: 'EPS', category: 'Autre' },
+  { id: 'allemagne', name: 'Allemand', category: 'Littéraire' },
+  { id: 'espagnol', name: 'Espagnol', category: 'Littéraire' },
+  { id: 'ct', name: 'Couture/Technique', category: 'Autre' },
 ];
 
 export type AuditLog = {

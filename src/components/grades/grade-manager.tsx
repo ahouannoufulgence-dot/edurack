@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ALL_CLASSES, SUBJECTS, User, GradeRecord } from "@/lib/school-types";
-import { getFromStorage, saveGrade } from "@/lib/data-service";
+import { getFromStorage, saveGrade, getCoefficient } from "@/lib/data-service";
 import { calculateMoyenneComplex } from "@/lib/school-logic";
 import { FileEdit, Save, CheckCircle, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +75,8 @@ export function GradeManager({ user }: { user: User }) {
 
   const handleSaveAll = () => {
     let count = 0;
+    const currentCoeff = getCoefficient(selectedClass, selectedSubject);
+
     Object.entries(scores).forEach(([studentId, s]) => {
       const interros = s.interros.map(v => v === "" ? null : parseFloat(v));
       const devoirs = s.devoirs.map(v => v === "" ? null : parseFloat(v));
@@ -92,14 +94,14 @@ export function GradeManager({ user }: { user: User }) {
         devoirs,
         composition: comp,
         moyenne: moy,
-        coefficient: SUBJECTS.find(sub => sub.id === selectedSubject)?.coefficient || 1
+        coefficient: currentCoeff
       });
       count++;
     });
     
     toast({ 
       title: "Notes enregistrées", 
-      description: `${count} dossiers mis à jour pour le ${selectedTrimestre} (${selectedClass}).` 
+      description: `${count} dossiers mis à jour avec coefficient ${currentCoeff}.` 
     });
   };
 
@@ -110,7 +112,7 @@ export function GradeManager({ user }: { user: User }) {
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <FileEdit className="w-6 h-6 text-emerald-700" /> Saisie Pédagogique (3-3-1)
           </h2>
-          <p className="text-xs text-muted-foreground">Régime : 3 Interros + 3 Devoirs + 1 Composition</p>
+          <p className="text-xs text-muted-foreground">Coeff. actuel pour cette classe : <span className="font-black text-emerald-700">{getCoefficient(selectedClass, selectedSubject)}</span></p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Select value={selectedTrimestre} onValueChange={(v: any) => setSelectedTrimestre(v)}>
@@ -170,7 +172,6 @@ export function GradeManager({ user }: { user: User }) {
                         <p className="text-[9px] font-mono text-muted-foreground">{student.id}</p>
                       </TableCell>
                       
-                      {/* Interrogations */}
                       <TableCell className="bg-blue-50/10">
                         <div className="flex gap-1 justify-center">
                           {[0, 1, 2].map(idx => (
@@ -186,7 +187,6 @@ export function GradeManager({ user }: { user: User }) {
                         </div>
                       </TableCell>
 
-                      {/* Devoirs */}
                       <TableCell className="bg-orange-50/10">
                         <div className="flex gap-1 justify-center">
                           {[0, 1, 2].map(idx => (
@@ -202,7 +202,6 @@ export function GradeManager({ user }: { user: User }) {
                         </div>
                       </TableCell>
 
-                      {/* Composition */}
                       <TableCell>
                         <Input 
                           type="number" min={0} max={20} step={0.25}
