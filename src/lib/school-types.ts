@@ -123,7 +123,18 @@ export type PaymentRecord = {
   paiementId: string;
   eleveId: string;
   montant: number;
-  statut: 'payé' | 'partiel' | 'en attente';
+  typePaiement: string;
   datePaiement: string;
   anneeScolaire: string;
+};
+
+export type EmploiDuTemps = {
+  edtId: string;
+  classeId: string;
+  jour: string;
+  heureDebut: string;
+  heureFin: string;
+  matiereId: string;
+  enseignantId: string;
+  salle: string;
 };

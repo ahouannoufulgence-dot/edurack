@@ -108,7 +108,7 @@ export function GradeManager({ user }: { user: User }) {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
-            <FileEdit className="w-6 h-6 text-emerald-700" /> Saisie Pédagogique
+            <FileEdit className="w-6 h-6 text-emerald-700" /> Saisie Pédagogique (3-3-1)
           </h2>
           <p className="text-xs text-muted-foreground">Régime : 3 Interros + 3 Devoirs + 1 Composition</p>
         </div>
@@ -141,8 +141,8 @@ export function GradeManager({ user }: { user: User }) {
             <TableHeader className="bg-slate-50">
               <TableRow>
                 <TableHead className="pl-6 py-4 sticky left-0 bg-slate-50 z-20 w-48">Élève</TableHead>
-                <TableHead className="text-center bg-blue-50/30">Interrogations</TableHead>
-                <TableHead className="text-center bg-orange-50/30">Devoirs</TableHead>
+                <TableHead className="text-center bg-blue-50/30">Interrogations (3)</TableHead>
+                <TableHead className="text-center bg-orange-50/30">Devoirs (3)</TableHead>
                 <TableHead className="w-24 text-center">Comp.</TableHead>
                 <TableHead className="w-24 text-center font-bold">Moyenne</TableHead>
                 <TableHead className="text-right pr-6">Statut</TableHead>
@@ -152,7 +152,7 @@ export function GradeManager({ user }: { user: User }) {
               {students.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-10 text-muted-foreground italic">
-                    Aucun élève trouvé.
+                    Aucun élève trouvé pour cette classe.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -166,7 +166,7 @@ export function GradeManager({ user }: { user: User }) {
                   return (
                     <TableRow key={student.id} className="hover:bg-emerald-50/30 transition-colors">
                       <TableCell className="pl-6 py-4 sticky left-0 bg-white group-hover:bg-emerald-50 transition-colors z-10 border-r">
-                        <p className="font-bold text-slate-800 truncate max-w-[150px]">{student.name}</p>
+                        <p className="font-bold text-slate-800 truncate max-w-[150px] uppercase">{student.name}</p>
                         <p className="text-[9px] font-mono text-muted-foreground">{student.id}</p>
                       </TableCell>
                       
@@ -232,7 +232,7 @@ export function GradeManager({ user }: { user: User }) {
                               </div>
                             </TooltipTrigger>
                             <TooltipContent>
-                              {moy > 0 ? "Notes saisies" : "Saisie en attente"}
+                              {moy > 0 ? "Notes saisies et validées" : "Saisie en attente"}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>

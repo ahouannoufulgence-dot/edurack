@@ -54,6 +54,7 @@ export function registerUser(data: {
       classLevel: data.classLevel,
       classeId: data.classLevel,
       subjectId: data.subjectId,
+      matieresAttribuees: data.subjectId ? [data.subjectId] : [],
       role: data.role,
       password: data.password || 'Pass1234',
       questionSecrete: data.secretQuestion,
@@ -65,10 +66,21 @@ export function registerUser(data: {
     };
 
     saveToStorage(KEYS.USERS, [...users, newUser]);
-    syncIdentitySystem(data.role === 'Eleve' ? (data.classLevel as ClassLevel) : undefined);
+    
+    // Déterminer la classe cible pour la synchro si c'est un élève
+    const syncClass = data.role === 'Eleve' ? (data.classLevel as ClassLevel) : undefined;
+    syncIdentitySystem(syncClass);
     
     const updatedUsers = getFromStorage<User>(KEYS.USERS);
     const finalUser = updatedUsers.find(u => u.name === fullName && u.role === data.role);
+    
+    createAuditLog(
+      finalUser?.id || tempId,
+      fullName,
+      'STUDENT_ADD',
+      `Création de compte réussie : ${data.role}`
+    );
+
     return finalUser?.id || tempId;
   } catch (error) {
     console.error("Erreur inscription:", error);
@@ -76,6 +88,7 @@ export function registerUser(data: {
   }
 }
 
+// Assurer l'existence de addStudent pour corriger l'erreur d'importation
 export function addStudent(data: any) {
   return registerUser({ ...data, role: 'Eleve' });
 }
