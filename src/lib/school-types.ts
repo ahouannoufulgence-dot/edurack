@@ -7,21 +7,26 @@ export type User = {
   nom: string;
   prenom: string;
   sexe: 'M' | 'F';
-  telephone: string;
+  telephone?: string;
   email?: string;
   role: Role;
   classeId?: string;
+  classLevel?: string; // Utilisé pour le tri des élèves
+  subjectId?: string;  // Utilisé pour le tri des enseignants
   matieresAttribuees?: string[];
   motDePasseHash?: string;
+  password?: string; // Pour le prototype
   premierAcces: boolean;
   questionSecrete?: string;
   reponseSecrete?: string;
   statutCompte: 'actif' | 'inactif' | 'suspendu';
   derniereConnexion?: string;
   photoProfil?: string;
+  photoUrl?: string; // Pour le prototype
   dateCreation: string;
-  // Compatibilité avec les anciens composants
   name: string; 
+  idHistory?: string[];
+  studentId?: string; // Pour les parents
 };
 
 export type StudentInfo = {
@@ -83,14 +88,6 @@ export type Subject = {
   name: string; // Alias pour compatibilité
 };
 
-export type CoefficientSetting = {
-  coefficientId: string;
-  matiereId: string;
-  valeur: number;
-  dateModification: string;
-  auteurModification: string;
-};
-
 export type GradeRecord = {
   noteId: string;
   eleveId: string;
@@ -116,135 +113,20 @@ export type Bulletin = {
   qrCode: string;
 };
 
-export type AbsenceRecord = {
-  absenceId: string;
-  eleveId: string;
-  date: string;
-  motif: string;
-  justification?: string;
-  auteur: string;
-};
-
-export type DisciplineIncident = {
-  incidentId: string;
-  eleveId: string;
-  type: string;
-  description: string;
-  sanction?: string;
-  date: string;
-};
-
-export type PaymentRecord = {
-  paiementId: string;
-  eleveId: string;
-  typePaiement: string;
-  montant: number;
-  statut: 'payé' | 'partiel' | 'en attente';
-  datePaiement: string;
-  resteAPayer: number;
-  anneeScolaire: string;
-};
-
-export type ScheduleSlot = {
-  edtId: string;
-  classeId: string;
-  jour: string;
-  heureDebut: string;
-  heureFin: string;
-  matiereId: string;
-  enseignantId: string;
-  salle: string;
-};
-
-export type AgendaEvent = {
-  agendaId: string;
-  titre: string;
-  description: string;
-  date: string;
-  cible: string;
-  auteur: string;
-};
-
-export type InternalMessage = {
-  messageId: string;
-  expediteurId: string;
-  destinataireId: string;
-  message: string;
-  date: string;
-  lu: boolean;
-};
-
-export type SystemNotification = {
-  notificationId: string;
-  utilisateurId: string;
-  titre: string;
-  contenu: string;
-  lu: boolean;
-  date: string;
-};
-
-export type ConnectionLog = {
-  connexionId: string;
-  userId: string;
-  appareil: string;
-  ip: string;
-  localisation: string;
-  dateConnexion: string;
-  statut: string;
-};
-
-export type AuditAction = {
-  actionId: string;
-  auteurId: string;
-  module: string;
-  ancienneValeur?: any;
-  nouvelleValeur?: any;
-  date: string;
-};
-
-export type AppSettings = {
-  nomEtablissement: string;
-  logo: string;
-  devise: string;
-  telephone: string;
-  email: string;
-  anneeScolaire: string;
-  systemeNotation: string;
-  couleursApplication: {
-    primary: string;
-    secondary: string;
-  };
-};
-
-export type QrVerificationLog = {
-  qrId: string;
-  bulletinId: string;
-  dateVerification: string;
-  statutAuthenticite: boolean;
-};
-
-// Aliases pour compatibilité avec les composants existants
-export type ClassLevel = string;
-export type ConductGrade = 'Très bien' | 'Bien' | 'Assez bien' | 'Passable' | 'Insuffisant';
-export type Student = StudentInfo & { 
-  id: string; 
-  name: string; 
-  classLevel: string; 
-  photoUrl: string; 
-  conduct: ConductGrade; 
-  paymentStatus: 'A jour' | 'En retard' | 'Partiel' 
-};
-export type GradeEntry = GradeRecord;
-export type AuditLog = AuditAction & {
+export type AuditLog = {
+  id: string;
   timestamp: string;
-  userName: string;
   userId: string;
-  action: string;
+  userName: string;
+  action: 'LOGIN' | 'LOGOUT' | 'ACCESS_DENIED' | 'GRADE_UPDATE' | 'STUDENT_ADD' | 'PAYMENT_ADD' | 'ACCOUNT_ACTIVATION' | 'TOKEN_GENERATION' | 'SECURITY_ALERT' | 'LOCKOUT' | 'SYSTEM_RESET';
   details: string;
+  oldValue?: any;
+  newValue?: any;
   severity: 'low' | 'medium' | 'high' | 'critical';
   ipAddress?: string;
   deviceInfo?: string;
 };
+
 export type ActivationToken = {
   id: string;
   studentName: string;
@@ -255,7 +137,27 @@ export type ActivationToken = {
   activatedAt?: string;
   attempts: number;
 };
-export type Payment = PaymentRecord;
+
+export type PaymentRecord = {
+  paiementId: string;
+  eleveId: string;
+  montant: number;
+  statut: 'payé' | 'partiel' | 'en attente';
+  datePaiement: string;
+  anneeScolaire: string;
+};
+
+export type ClassLevel = string;
+export type ConductGrade = 'Très bien' | 'Bien' | 'Assez bien' | 'Passable' | 'Insuffisant';
+
+export type Student = StudentInfo & { 
+  id: string; 
+  name: string; 
+  classLevel: string; 
+  photoUrl: string; 
+  conduct: ConductGrade; 
+  paymentStatus: 'A jour' | 'En retard' | 'Partiel' 
+};
 
 export const ALL_CLASSES: ClassLevel[] = [
   '6e 1', '6e 2', '6e 3', '6e 4',

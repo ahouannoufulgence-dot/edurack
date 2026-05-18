@@ -1,6 +1,6 @@
 
 import { 
-  User, Student, GradeRecord, PaymentRecord, ClassLevel, 
+  User, GradeRecord, PaymentRecord, ClassLevel, 
   ALL_CLASSES, SUBJECTS, Role 
 } from './school-types';
 import { createAuditLog } from './audit';
@@ -35,52 +35,58 @@ export function registerUser(data: {
   secretQuestion?: string;
   secretAnswer?: string;
 }) {
-  const users = getFromStorage<any>(KEYS.USERS);
-  const fullName = `${data.prenom} ${data.nom}`.toUpperCase();
-  
-  // 1. Créer un utilisateur avec un ID temporaire
-  const tempId = `NEW-${Math.random().toString(36).substr(2, 5)}`;
-  const newUser = {
-    id: tempId,
-    identifiant: tempId,
-    name: fullName,
-    nom: data.nom.toUpperCase(),
-    prenom: data.prenom,
-    sexe: data.sexe,
-    classLevel: data.classLevel,
-    subjectId: data.subjectId,
-    role: data.role,
-    password: data.password || 'Pass1234',
-    questionSecrete: data.secretQuestion,
-    reponseSecrete: data.secretAnswer,
-    statutCompte: 'actif',
-    dateCreation: new Date().toISOString(),
-    premierAcces: false,
-    idHistory: []
-  };
+  try {
+    const users = getFromStorage<User>(KEYS.USERS);
+    const fullName = `${data.prenom} ${data.nom}`.toUpperCase();
+    
+    // 1. Créer un utilisateur avec un ID temporaire unique
+    const tempId = `TEMP-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    const newUser: User = {
+      id: tempId,
+      identifiant: tempId,
+      name: fullName,
+      nom: data.nom.toUpperCase(),
+      prenom: data.prenom,
+      sexe: data.sexe,
+      classLevel: data.classLevel,
+      classeId: data.classLevel, // Backup pour compatibilité
+      subjectId: data.subjectId,
+      role: data.role,
+      password: data.password || 'Pass1234',
+      questionSecrete: data.secretQuestion,
+      reponseSecrete: data.secretAnswer,
+      statutCompte: 'actif',
+      dateCreation: new Date().toISOString(),
+      premierAcces: false,
+      idHistory: []
+    };
 
-  saveToStorage(KEYS.USERS, [...users, newUser]);
-  
-  // 2. Déclencher le recalcul global des identifiants
-  syncIdentitySystem(data.role === 'Eleve' ? (data.classLevel as ClassLevel) : undefined);
-  
-  // 3. Récupérer l'identifiant final
-  const updatedUsers = getFromStorage<any>(KEYS.USERS);
-  const finalUser = updatedUsers.find((u: any) => u.name === fullName && u.role === data.role);
-  
-  const finalId = finalUser?.id || tempId;
-  
-  createAuditLog(
-    finalId, 
-    fullName, 
-    'ACCOUNT_ACTIVATION', 
-    `Inscription terminée pour le rôle ${data.role}. Identifiant final : ${finalId}`, 
-    null, 
-    finalUser, 
-    'medium'
-  );
-  
-  return finalId;
+    saveToStorage(KEYS.USERS, [...users, newUser]);
+    
+    // 2. Déclencher le recalcul global des identifiants
+    syncIdentitySystem(data.role === 'Eleve' ? (data.classLevel as ClassLevel) : undefined);
+    
+    // 3. Récupérer l'identifiant final recalculé
+    const updatedUsers = getFromStorage<User>(KEYS.USERS);
+    const finalUser = updatedUsers.find(u => u.name === fullName && u.role === data.role);
+    
+    const finalId = finalUser?.id || tempId;
+    
+    createAuditLog(
+      finalId, 
+      fullName, 
+      'ACCOUNT_ACTIVATION', 
+      `Inscription terminée pour le rôle ${data.role}. Identifiant final : ${finalId}`, 
+      null, 
+      finalUser, 
+      'medium'
+    );
+    
+    return finalId;
+  } catch (error) {
+    console.error("Erreur lors de l'enregistrement de l'utilisateur:", error);
+    throw error;
+  }
 }
 
 export function addStudent(studentData: any) {
@@ -139,7 +145,7 @@ export function getGlobalStats() {
     ? validGrades.reduce((acc, curr) => acc + curr.moyenne, 0) / validGrades.length 
     : 0;
   
-  const totalRevenue = payments.reduce((acc, curr) => acc + curr.montant, 0);
+  const totalRevenue = payments.reduce((acc, curr) => acc + (curr.montant || 0), 0);
 
   return {
     totalStudents,
