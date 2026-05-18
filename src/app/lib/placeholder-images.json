@@ -3,39 +3,45 @@
   "placeholderImages": [
     {
       "id": "student-1",
-      "description": "Student portrait 1",
+      "description": "Portrait d'élève 1",
       "imageUrl": "https://picsum.photos/seed/s1/200/200",
       "imageHint": "student portrait"
     },
     {
       "id": "student-2",
-      "description": "Student portrait 2",
+      "description": "Portrait d'élève 2",
       "imageUrl": "https://picsum.photos/seed/s2/200/200",
       "imageHint": "student portrait"
     },
     {
       "id": "student-3",
-      "description": "Student portrait 3",
+      "description": "Portrait d'élève 3",
       "imageUrl": "https://picsum.photos/seed/s3/200/200",
       "imageHint": "student portrait"
     },
     {
       "id": "student-4",
-      "description": "Student portrait 4",
+      "description": "Portrait d'élève 4",
       "imageUrl": "https://picsum.photos/seed/s4/200/200",
       "imageHint": "student portrait"
     },
     {
       "id": "school-banner",
-      "description": "School campus banner",
+      "description": "Bannière du campus scolaire",
       "imageUrl": "https://picsum.photos/seed/school/1200/400",
       "imageHint": "school campus"
     },
     {
       "id": "login-bg",
-      "description": "Classroom with students background",
+      "description": "Salle de classe avec élèves en arrière-plan",
       "imageUrl": "https://images.unsplash.com/photo-1523050335392-9bef867a0571?q=80&w=2070",
       "imageHint": "classroom students"
+    },
+    {
+      "id": "activation-bg",
+      "description": "Bibliothèque scolaire",
+      "imageUrl": "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=2070",
+      "imageHint": "school library"
     }
   ]
 }

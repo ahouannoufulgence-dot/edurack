@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { ShieldCheck, UserCheck, Sparkles, ArrowRight, Loader2, CheckCircle2, Al
 import { useRouter } from 'next/navigation';
 import { verifyActivation, completeActivation } from '@/lib/activation';
 import { useToast } from '@/hooks/use-toast';
+import imagesData from '@/app/lib/placeholder-images.json';
 
 export default function ActivationPage() {
   const [step, setStep] = useState(1);
@@ -25,6 +27,8 @@ export default function ActivationPage() {
   });
   const { toast } = useToast();
   const router = useRouter();
+
+  const bgImage = imagesData.placeholderImages.find(img => img.id === 'activation-bg');
 
   const handleStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,10 +62,22 @@ export default function ActivationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 bg-[url('https://images.unsplash.com/photo-1523050335392-9bef867a0571?q=80&w=2070')] bg-cover bg-center">
-      <div className="absolute inset-0 bg-emerald-900/60 backdrop-blur-sm" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Image Optimized */}
+      {bgImage && (
+        <Image
+          src={bgImage.imageUrl}
+          alt={bgImage.description}
+          fill
+          className="object-cover"
+          priority
+          data-ai-hint={bgImage.imageHint}
+        />
+      )}
       
-      <Card className="w-full max-w-lg relative z-10 border-none shadow-2xl overflow-hidden">
+      <div className="absolute inset-0 bg-emerald-900/70 backdrop-blur-sm" />
+      
+      <Card className="w-full max-w-lg relative z-10 border-none shadow-2xl overflow-hidden rounded-[1.5rem]">
         <div className="h-2 bg-accent" />
         <CardHeader className="text-center">
           <div className="mx-auto bg-emerald-100 p-3 rounded-2xl w-fit mb-4">

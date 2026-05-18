@@ -2,15 +2,18 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Eye, EyeOff, Loader2, Sparkles, UserCircle, QrCode, Lock } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { login, getCurrentUser } from '@/lib/auth-service';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from "@/lib/utils";
+import imagesData from '@/app/lib/placeholder-images.json';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,6 +21,8 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({ userId: '', password: '' });
   const router = useRouter();
   const { toast } = useToast();
+
+  const bgImage = imagesData.placeholderImages.find(img => img.id === 'login-bg');
 
   useEffect(() => {
     if (getCurrentUser()) {
@@ -42,15 +47,23 @@ export default function LoginPage() {
   };
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat relative overflow-hidden"
-      style={{ backgroundImage: "url('https://images.unsplash.com/photo-1523050335392-9bef867a0571?q=80&w=2070')" }}
-      data-ai-hint="classroom students"
-    >
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Image Optimized */}
+      {bgImage && (
+        <Image
+          src={bgImage.imageUrl}
+          alt={bgImage.description}
+          fill
+          className="object-cover"
+          priority
+          data-ai-hint={bgImage.imageHint}
+        />
+      )}
+      
       {/* Overlay dégradé pour la lisibilité */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/40 via-blue-900/20 to-transparent backdrop-blur-[2px]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/60 via-blue-900/40 to-black/20 backdrop-blur-[2px]" />
 
-      <Card className="w-full max-w-md border-white/20 shadow-2xl bg-white/85 backdrop-blur-xl relative z-10 rounded-[2rem] overflow-hidden animate-in fade-in zoom-in duration-500">
+      <Card className="w-full max-w-md border-white/20 shadow-2xl bg-white/90 backdrop-blur-xl relative z-10 rounded-[2rem] overflow-hidden animate-in fade-in zoom-in duration-500">
         <CardHeader className="text-center pt-8 pb-4">
           <div className="mx-auto bg-emerald-deep p-4 rounded-2xl w-fit mb-4 shadow-lg shadow-emerald-900/20">
             <ShieldCheck className="w-10 h-10 text-white" />
@@ -115,7 +128,7 @@ export default function LoginPage() {
                 <span className="w-full border-t border-slate-200" />
               </div>
               <div className="relative flex justify-center text-[10px] uppercase">
-                <span className="bg-white/85 px-2 text-slate-400 font-bold">Ou</span>
+                <span className="bg-white/95 px-2 text-slate-400 font-bold">Ou</span>
               </div>
             </div>
 
@@ -148,25 +161,9 @@ export default function LoginPage() {
         </CardFooter>
       </Card>
       
-      {/* Éléments de design flottants inspirés de l'image */}
       <div className="absolute bottom-4 right-6 text-white/40 text-[10px] z-20 pointer-events-none hidden sm:block">
         © 2024 EduTrack Pro - Système Anti-Fraude Actif
       </div>
     </div>
-  );
-}
-
-function Badge({ children, variant, className, onClick }: any) {
-  return (
-    <span 
-      onClick={onClick}
-      className={cn(
-        "px-2 py-0.5 rounded-full border text-slate-600 font-medium",
-        variant === 'outline' ? 'border-slate-300' : 'bg-slate-100',
-        className
-      )}
-    >
-      {children}
-    </span>
   );
 }
