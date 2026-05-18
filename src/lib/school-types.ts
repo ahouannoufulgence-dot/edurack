@@ -1,4 +1,3 @@
-
 export type Role = 'Directeur' | 'Enseignant' | 'Parent' | 'Eleve';
 
 export type User = {
@@ -71,11 +70,13 @@ export type AuditLog = {
   timestamp: string;
   userId: string;
   userName: string;
-  action: 'LOGIN' | 'LOGOUT' | 'GRADE_UPDATE' | 'GRADE_DELETE' | 'PAYMENT_RECORD' | 'ACCESS_DENIED' | 'ACCOUNT_ACTIVATION' | 'TOKEN_GENERATION' | 'LOCKOUT';
+  action: 'LOGIN' | 'LOGOUT' | 'GRADE_UPDATE' | 'GRADE_DELETE' | 'PAYMENT_RECORD' | 'ACCESS_DENIED' | 'ACCOUNT_ACTIVATION' | 'TOKEN_GENERATION' | 'LOCKOUT' | 'SECURITY_ALERT';
   details: string;
   oldValue?: any;
   newValue?: any;
   severity: 'low' | 'medium' | 'high' | 'critical';
+  ipAddress?: string;
+  deviceInfo?: string;
 };
 
 export type ActivationToken = {

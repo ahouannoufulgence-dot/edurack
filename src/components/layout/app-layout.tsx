@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -20,7 +19,8 @@ import {
   ShieldCheck,
   ShieldAlert,
   UserPlus,
-  HelpCircle
+  HelpCircle,
+  Activity
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Role, User } from "@/lib/school-types";
@@ -149,6 +149,11 @@ export function AppLayout({ children, activeModule, setActiveModule, user }: App
             </div>
 
             <div className="flex items-center gap-4">
+              <div className="hidden lg:flex items-center gap-2 mr-4 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                <Activity className="w-3 h-3 text-emerald-600 animate-pulse" />
+                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-tighter">Connexion Protégée</span>
+              </div>
+
               <div className="relative">
                 <Bell className="w-5 h-5 text-muted-foreground cursor-pointer" />
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full border-2 border-white font-bold">3</span>
