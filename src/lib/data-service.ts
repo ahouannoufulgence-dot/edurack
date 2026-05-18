@@ -24,10 +24,6 @@ export function saveToStorage<T>(key: string, data: T[]) {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
-/**
- * Enregistre un nouvel utilisateur (Élève, Enseignant ou Directeur)
- * et déclenche la synchronisation des identifiants.
- */
 export function registerUser(data: {
   role: Role;
   nom: string;
@@ -65,10 +61,10 @@ export function registerUser(data: {
 
   saveToStorage(KEYS.USERS, [...users, newUser]);
   
-  // 2. Déclencher le recalcul global des identifiants selon les règles métiers
+  // 2. Déclencher le recalcul global des identifiants
   syncIdentitySystem(data.role === 'Eleve' ? (data.classLevel as ClassLevel) : undefined);
   
-  // 3. Récupérer l'identifiant final attribué par le système après tri
+  // 3. Récupérer l'identifiant final
   const updatedUsers = getFromStorage<any>(KEYS.USERS);
   const finalUser = updatedUsers.find((u: any) => u.name === fullName && u.role === data.role);
   
@@ -87,7 +83,6 @@ export function registerUser(data: {
   return finalId;
 }
 
-// GESTION DES ELEVES (ADMIN)
 export function addStudent(studentData: any) {
   return registerUser({
     ...studentData,
@@ -95,7 +90,6 @@ export function addStudent(studentData: any) {
   });
 }
 
-// GESTION DES NOTES
 export function saveGrade(grade: Partial<GradeRecord>) {
   const grades = getFromStorage<GradeRecord>(KEYS.GRADES);
   
@@ -118,10 +112,8 @@ export function saveGrade(grade: Partial<GradeRecord>) {
   }
   
   saveToStorage(KEYS.GRADES, grades);
-  createAuditLog(grade.enseignantId!, 'Enseignant', 'GRADE_ENTRY', `Note enregistrée pour ${grade.eleveId}`, null, newGrade, 'low');
 }
 
-// GESTION DES PAIEMENTS
 export function addPayment(payment: Partial<PaymentRecord>) {
   const payments = getFromStorage<PaymentRecord>(KEYS.PAYMENTS);
   const newPayment = {
@@ -132,10 +124,8 @@ export function addPayment(payment: Partial<PaymentRecord>) {
   } as PaymentRecord;
   
   saveToStorage(KEYS.PAYMENTS, [...payments, newPayment]);
-  createAuditLog('SYSTEM', 'Comptabilité', 'PAYMENT_RECEIVED', `Encaissement de ${payment.montant} FCFA pour l'élève ${payment.eleveId}`, null, newPayment, 'low');
 }
 
-// CALCULS DASHBOARD
 export function getGlobalStats() {
   const users = getFromStorage<User>(KEYS.USERS);
   const students = users.filter(u => u.role === 'Eleve');

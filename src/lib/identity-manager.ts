@@ -1,6 +1,5 @@
 
-import { User, GradeEntry, AuditLog, Payment, ClassLevel, Role } from './school-types';
-import { createAuditLog } from './audit';
+import { ClassLevel } from './school-types';
 
 const USERS_KEY = 'edutrack_users';
 const GRADES_KEY = 'edutrack_grades';
@@ -9,7 +8,7 @@ const LOGS_KEY = 'edutrack_audit_logs';
 
 /**
  * Recalcule tous les identifiants par ordre alphabétique selon le rôle
- * et met à jour toutes les références dans les autres tables.
+ * et met à jour toutes les références dans les autres tables (cascade).
  */
 export function syncIdentitySystem(classLevel?: ClassLevel) {
   if (typeof window === 'undefined') return;
@@ -24,8 +23,10 @@ export function syncIdentitySystem(classLevel?: ClassLevel) {
   let updatedPayments = [...payments];
   let updatedLogs = [...logs];
 
-  // 1. Recalcul pour les ÉLÈVES (triés par Classe puis Nom)
-  const classesToProcess = classLevel ? [classLevel] : Array.from(new Set(users.filter(u => u.role === 'Eleve').map(u => u.classLevel!)));
+  // 1. Recalcul pour les ÉLÈVES
+  const classesToProcess = classLevel 
+    ? [classLevel] 
+    : Array.from(new Set(users.filter(u => u.role === 'Eleve').map(u => u.classLevel!)));
 
   classesToProcess.forEach(currentClass => {
     const students = updatedUsers
@@ -46,7 +47,7 @@ export function syncIdentitySystem(classLevel?: ClassLevel) {
             identifiant: newId,
             idHistory: Array.from(new Set([...(student.idHistory || []), oldId]))
           };
-          // Cascade references
+          // Mise à jour des références
           updatedGrades = updatedGrades.map(g => g.eleveId === oldId ? { ...g, eleveId: newId } : g);
           updatedPayments = updatedPayments.map(p => p.eleveId === oldId ? { ...p, eleveId: newId } : p);
           updatedLogs = updatedLogs.map(l => l.userId === oldId ? { ...l, userId: newId } : l);
@@ -55,7 +56,7 @@ export function syncIdentitySystem(classLevel?: ClassLevel) {
     });
   });
 
-  // 2. Recalcul pour les ENSEIGNANTS (triés par Matière puis Nom)
+  // 2. Recalcul pour les ENSEIGNANTS
   const teacherRoles = updatedUsers.filter(u => u.role === 'Enseignant');
   const subjects = Array.from(new Set(teacherRoles.map(u => u.subjectId || 'GEN')));
 
@@ -80,7 +81,7 @@ export function syncIdentitySystem(classLevel?: ClassLevel) {
     });
   });
 
-  // 3. Recalcul pour les DIRECTEURS (triés par Nom)
+  // 3. Recalcul pour les DIRECTEURS
   const directors = updatedUsers
     .filter(u => u.role === 'Directeur')
     .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
@@ -106,6 +107,5 @@ export function syncIdentitySystem(classLevel?: ClassLevel) {
   localStorage.setItem(PAYMENTS_KEY, JSON.stringify(updatedPayments));
   localStorage.setItem(LOGS_KEY, JSON.stringify(updatedLogs));
   
-  // Émettre un événement pour notifier les composants que les données ont changé
   window.dispatchEvent(new Event('storage'));
 }

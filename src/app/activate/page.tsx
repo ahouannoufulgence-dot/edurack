@@ -9,20 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  ShieldCheck, 
-  UserPlus, 
-  Sparkles, 
   ArrowRight, 
   Loader2, 
   CheckCircle2, 
-  AlertCircle,
   GraduationCap,
   Activity,
   Lock,
-  User as UserIcon,
-  Info,
   Copy,
-  Briefcase,
   UserCog,
   BookOpen
 } from "lucide-react";
@@ -31,6 +24,7 @@ import { ALL_CLASSES, SUBJECTS, Role } from '@/lib/school-types';
 import { registerUser } from '@/lib/data-service';
 import { useToast } from '@/hooks/use-toast';
 import imagesData from '@/app/lib/placeholder-images.json';
+import { cn } from "@/lib/utils";
 
 export default function RegistrationPage() {
   const [step, setStep] = useState(1);
@@ -74,7 +68,7 @@ export default function RegistrationPage() {
     
     setLoading(true);
     
-    // Simulation d'un délai réseau pour l'expérience utilisateur
+    // Délai simulé pour l'expérience utilisateur
     setTimeout(() => {
       try {
         const resultId = registerUser({
@@ -97,7 +91,7 @@ export default function RegistrationPage() {
       } finally {
         setLoading(false);
       }
-    }, 1800);
+    }, 1500);
   };
 
   const copyId = () => {
@@ -124,7 +118,6 @@ export default function RegistrationPage() {
               priority
             />
             <div className="absolute inset-0 bg-black/40 z-10" />
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/40 via-transparent to-blue-900/40 z-15" />
           </div>
         )}
       </div>
@@ -237,13 +230,6 @@ export default function RegistrationPage() {
                     </Select>
                   </div>
                 )}
-
-                {formData.role === 'Directeur' && (
-                  <div className="space-y-2">
-                    <Label className="text-slate-700 font-bold ml-1">Code Administration</Label>
-                    <Input placeholder="Code confidentiel" type="password" className="h-12 bg-white/50 border-slate-200 rounded-xl" />
-                  </div>
-                )}
               </div>
 
               <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 h-13 rounded-xl text-white font-bold shadow-lg gap-2">
@@ -258,8 +244,8 @@ export default function RegistrationPage() {
                 <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Lock className="w-6 h-6 text-emerald-600" />
                 </div>
-                <h3 className="font-black text-xl text-slate-800">Paramètres de sécurité</h3>
-                <p className="text-sm text-slate-500 font-medium">Définissez votre accès personnel.</p>
+                <h3 className="font-black text-xl text-slate-800">Sécurité du compte</h3>
+                <p className="text-sm text-slate-500 font-medium">Définissez vos identifiants de connexion.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -288,9 +274,9 @@ export default function RegistrationPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-700 font-bold ml-1">Question de récupération</Label>
+                <Label className="text-slate-700 font-bold ml-1">Question secrète</Label>
                 <Input 
-                  placeholder="Ex: Quel était votre premier métier ?" 
+                  placeholder="Ex: Nom de votre premier école ?" 
                   className="h-12 bg-white/50 border-slate-200 rounded-xl"
                   value={formData.secretQuestion} 
                   onChange={e => setFormData({...formData, secretQuestion: e.target.value})}
@@ -299,7 +285,7 @@ export default function RegistrationPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-700 font-bold ml-1">Réponse secrète</Label>
+                <Label className="text-slate-700 font-bold ml-1">Réponse</Label>
                 <Input 
                   placeholder="Votre réponse" 
                   className="h-12 bg-white/50 border-slate-200 rounded-xl"
@@ -314,7 +300,7 @@ export default function RegistrationPage() {
                   Retour
                 </Button>
                 <Button type="submit" className="flex-[2] bg-emerald-600 hover:bg-emerald-700 h-13 rounded-xl text-white font-bold shadow-lg" disabled={loading}>
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Générer mon Identifiant"}
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Terminer l'inscription"}
                 </Button>
               </div>
             </form>
@@ -330,9 +316,9 @@ export default function RegistrationPage() {
               </div>
               
               <div>
-                <h2 className="text-2xl font-black text-slate-800">Compte Activé !</h2>
+                <h2 className="text-2xl font-black text-slate-800">Inscription Terminée !</h2>
                 <p className="text-slate-500 font-medium mt-2">
-                  Bienvenue dans l'espace numérique d'excellence. Voici votre identifiant officiel :
+                  Voici votre identifiant unique généré par le système :
                 </p>
               </div>
 
@@ -342,13 +328,6 @@ export default function RegistrationPage() {
                 <Button size="icon" variant="ghost" className="absolute top-2 right-2 text-slate-400 hover:text-emerald-600" onClick={copyId}>
                   <Copy className="w-4 h-4" />
                 </Button>
-              </div>
-
-              <div className="bg-blue-50 p-4 rounded-2xl flex items-start gap-3 text-left">
-                <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-                <p className="text-[11px] text-blue-800 font-medium">
-                  Cet identifiant a été généré automatiquement selon les règles de nomenclature de l'établissement. Gardez-le précieusement.
-                </p>
               </div>
 
               <Button className="w-full bg-slate-900 hover:bg-black h-14 rounded-2xl text-white font-bold shadow-lg gap-2 text-lg" onClick={() => router.push('/login')}>
@@ -361,7 +340,7 @@ export default function RegistrationPage() {
         <CardFooter className="bg-slate-50/80 border-t p-4 flex justify-center items-center gap-4">
           <div className="flex items-center gap-2">
             <Activity className="w-3 h-3 text-emerald-600 animate-pulse" />
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Système de Vérification d'Identité</span>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Système d'Identité Dynamique v2</span>
           </div>
         </CardFooter>
       </Card>
