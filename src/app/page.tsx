@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
-import { Role, Student, ALL_CLASSES } from '@/lib/school-types';
+import { User, Student } from '@/lib/school-types';
 import { StatsGrid } from '@/components/dashboard/stats-grid';
 import { CoefficientConfig } from '@/components/grades/coefficient-config';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
@@ -14,49 +14,65 @@ import { Button } from '@/components/ui/button';
 import { RemediationReport } from '@/components/ai/remediation-report';
 import { SecurityDashboard } from '@/components/security/security-dashboard';
 import { TokenGenerator } from '@/components/admin/token-generator';
-import { FileText, ChevronRight, Filter, Download, Sparkles, BrainCircuit, Lock, Unlock, ShieldAlert, QrCode, UserPlus } from 'lucide-react';
+import { FileText, ChevronRight, Filter, Download, BrainCircuit, Lock, Unlock, QrCode, UserPlus, ShieldCheck } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { createAuditLog } from '@/lib/audit';
+import { getCurrentUser } from '@/lib/auth-service';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
 const MOCK_STUDENTS: Student[] = [
-  { id: '1', name: 'Koffi ADEBAYO', classLevel: 'Tle D', photoUrl: 'https://picsum.photos/seed/s1/100/100', conduct: 'Très bien', paymentStatus: 'A jour' },
-  { id: '2', name: 'Sena HOUNKPONOU', classLevel: '3e 1', photoUrl: 'https://picsum.photos/seed/s2/100/100', conduct: 'Bien', paymentStatus: 'Partiel' },
-  { id: '3', name: 'Bio AGOSSOU', classLevel: 'Tle C', photoUrl: 'https://picsum.photos/seed/s3/100/100', conduct: 'Assez bien', paymentStatus: 'En retard' },
-  { id: '4', name: 'Marie TOUDONOU', classLevel: '4e 2', photoUrl: 'https://picsum.photos/seed/s4/100/100', conduct: 'Très bien', paymentStatus: 'A jour' },
+  { id: 'ELV-TLED-001', name: 'Koffi ADEBAYO', classLevel: 'Tle D', photoUrl: 'https://picsum.photos/seed/s1/100/100', conduct: 'Très bien', paymentStatus: 'A jour' },
+  { id: 'ELV-3E1-012', name: 'Sena HOUNKPONOU', classLevel: '3e 1', photoUrl: 'https://picsum.photos/seed/s2/100/100', conduct: 'Bien', paymentStatus: 'Partiel' },
+  { id: 'ELV-TLEC-005', name: 'Bio AGOSSOU', classLevel: 'Tle C', photoUrl: 'https://picsum.photos/seed/s3/100/100', conduct: 'Assez bien', paymentStatus: 'En retard' },
+  { id: 'ELV-4E2-024', name: 'Marie TOUDONOU', classLevel: '4e 2', photoUrl: 'https://picsum.photos/seed/s4/100/100', conduct: 'Très bien', paymentStatus: 'A jour' },
 ];
 
 export default function EduTrackApp() {
   const [activeModule, setActiveModule] = useState('dashboard');
-  const [userRole, setUserRole] = useState<Role>('Directeur');
+  const [user, setUser] = useState<User | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (activeModule === 'security' && userRole !== 'Directeur') {
-      createAuditLog('user_123', userRole, 'ACCESS_DENIED', `Tentative d'accès au module Sécurité par un ${userRole}`, null, null, 'high');
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      router.push('/login');
+    } else {
+      setUser(currentUser);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (user && activeModule === 'security' && user.role !== 'Directeur') {
+      createAuditLog(user.id, user.name, 'ACCESS_DENIED', `Accès refusé au module Sécurité`, null, null, 'high');
       setActiveModule('dashboard');
       toast({
         variant: 'destructive',
         title: 'Accès Refusé',
-        description: 'Vous n\'avez pas les droits pour accéder à ce module.'
+        description: 'Seul le Directeur peut accéder à ce module.'
       });
     }
-  }, [activeModule, userRole, toast]);
+  }, [activeModule, user, toast]);
+
+  if (!user) return null;
 
   const renderModule = () => {
     switch (activeModule) {
       case 'dashboard':
         return (
           <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="flex justify-between items-end">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">Bonjour, M. le {userRole}</h1>
-                <p className="text-muted-foreground mt-1">Voici l'aperçu sécurisé de votre établissement.</p>
+                <h1 className="text-3xl font-bold tracking-tight">Bonjour, {user.name}</h1>
+                <p className="text-muted-foreground mt-1">
+                  Espace sécurisé - Rôle : <span className="font-bold text-emerald-deep">{user.role}</span>
+                </p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Rapport Global</Button>
-                <Button className="bg-emerald-deep gap-2"><Filter className="w-4 h-4" /> Filtrer</Button>
+                <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Rapport</Button>
+                {user.role === 'Directeur' && <Button className="bg-emerald-deep gap-2"><Filter className="w-4 h-4" /> Filtrer</Button>}
               </div>
             </div>
             
@@ -72,9 +88,9 @@ export default function EduTrackApp() {
                   <Table>
                     <TableHeader className="bg-secondary/20">
                       <TableRow>
-                        <TableHead className="pl-6">Nom</TableHead>
+                        <TableHead className="pl-6">Identifiant / Nom</TableHead>
                         <TableHead>Classe</TableHead>
-                        {userRole === 'Directeur' && <TableHead>Paiement</TableHead>}
+                        {user.role === 'Directeur' && <TableHead>Paiement</TableHead>}
                         <TableHead className="text-right pr-6">Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -91,11 +107,14 @@ export default function EduTrackApp() {
                                 <AvatarImage src={student.photoUrl} />
                                 <AvatarFallback>{student.name[0]}</AvatarFallback>
                               </Avatar>
-                              <span className="font-medium group-hover:text-emerald-deep transition-colors">{student.name}</span>
+                              <div>
+                                <p className="font-medium group-hover:text-emerald-deep transition-colors leading-none">{student.name}</p>
+                                <p className="text-[10px] text-muted-foreground mt-1 font-mono">{student.id}</p>
+                              </div>
                             </div>
                           </TableCell>
                           <TableCell><Badge variant="outline" className="font-normal">{student.classLevel}</Badge></TableCell>
-                          {userRole === 'Directeur' && (
+                          {user.role === 'Directeur' && (
                             <TableCell>
                               <span className={cn(
                                 "text-xs font-bold",
@@ -141,17 +160,17 @@ export default function EduTrackApp() {
                   </CardContent>
                 </Card>
 
-                {userRole === 'Directeur' && (
+                {user.role === 'Directeur' && (
                   <Card className="bg-emerald-600 text-white border-none shadow-lg">
                     <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2"><UserPlus className="w-5 h-5" /> Inscriptions IA</CardTitle>
+                      <CardTitle className="text-lg flex items-center gap-2"><ShieldCheck className="w-5 h-5" /> Centre d'Accès</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-emerald-50 mb-4 leading-relaxed">
-                        Générez des codes d'activation pour vos nouveaux élèves en un clic.
+                        Gérez les identifiants DIR/ENS/ELV/PAR et surveillez les connexions.
                       </p>
-                      <Button variant="secondary" size="sm" className="w-full font-bold" onClick={() => setActiveModule('inscriptions')}>
-                        Gérer les Inscriptions
+                      <Button variant="secondary" size="sm" className="w-full font-bold" onClick={() => setActiveModule('security')}>
+                        Voir le Dashboard Sécurité
                       </Button>
                     </CardContent>
                   </Card>
@@ -191,7 +210,7 @@ export default function EduTrackApp() {
           <div className="space-y-6 animate-in fade-in duration-500">
              <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Gestion des Encaissements</h2>
-                <Button className="bg-emerald-deep">+ Nouveau Paiement</Button>
+                {user.role === 'Directeur' && <Button className="bg-emerald-deep">+ Nouveau Paiement</Button>}
              </div>
              <Card>
                <CardContent className="p-0">
@@ -234,7 +253,7 @@ export default function EduTrackApp() {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Notes et Résultats</h2>
-              {userRole === 'Enseignant' && <Button className="bg-emerald-deep">Saisir des notes</Button>}
+              {user.role === 'Enseignant' && <Button className="bg-emerald-deep">Saisir des notes</Button>}
             </div>
             <Card>
               <CardContent className="p-0">
@@ -268,7 +287,7 @@ export default function EduTrackApp() {
                         <TableCell className="text-xs text-muted-foreground">{n.author}</TableCell>
                         <TableCell className="text-right">
                           {n.locked ? (
-                             userRole === 'Directeur' ? <Button variant="ghost" size="sm">Déverrouiller</Button> : <span className="text-xs text-muted-foreground">Protégé</span>
+                             user.role === 'Directeur' ? <Button variant="ghost" size="sm">Déverrouiller</Button> : <span className="text-xs text-muted-foreground">Protégé</span>
                           ) : (
                             <Button variant="ghost" size="sm">Modifier</Button>
                           )}
@@ -283,13 +302,13 @@ export default function EduTrackApp() {
         );
 
       default:
-        return (activeModule === 'security' && userRole !== 'Directeur') ? null : (
+        return (
           <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
             <div className="bg-secondary/50 p-6 rounded-full">
-              <FileText className="w-12 h-12 text-muted-foreground" />
+              <ShieldCheck className="w-12 h-12 text-muted-foreground" />
             </div>
             <h2 className="text-2xl font-bold">Module en développement</h2>
-            <p className="text-muted-foreground">Bientôt disponible.</p>
+            <p className="text-muted-foreground">Accès autorisé pour {user.role}. Contenu bientôt disponible.</p>
           </div>
         );
     }
@@ -299,8 +318,7 @@ export default function EduTrackApp() {
     <AppLayout 
       activeModule={activeModule} 
       setActiveModule={setActiveModule}
-      userRole={userRole}
-      setUserRole={setUserRole}
+      user={user}
     >
       {renderModule()}
     </AppLayout>

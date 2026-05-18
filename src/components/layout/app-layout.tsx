@@ -19,21 +19,20 @@ import {
   Sparkles,
   ShieldCheck,
   ShieldAlert,
-  Fingerprint,
   UserPlus
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Role } from "@/lib/school-types";
+import { Role, User } from "@/lib/school-types";
 import { cn } from "@/lib/utils";
 import { useRouter } from 'next/navigation';
 import { createAuditLog } from '@/lib/audit';
+import { getCurrentUser, logout } from '@/lib/auth-service';
 
 interface AppLayoutProps {
   children: React.ReactNode;
   activeModule: string;
   setActiveModule: (m: string) => void;
-  userRole: Role;
-  setUserRole: (r: Role) => void;
+  user?: User | null;
 }
 
 const MENU_ITEMS = [
@@ -43,28 +42,28 @@ const MENU_ITEMS = [
   { id: 'inscriptions', label: 'Inscriptions', icon: UserPlus, roles: ['Directeur'] },
   { id: 'absences', label: 'Absences & Discipline', icon: Clock, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
   { id: 'schedule', label: 'Emploi du temps', icon: Calendar, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
-  { id: 'payments', label: 'Paiements', icon: CreditCard, roles: ['Directeur', 'Parent'] },
+  { id: 'payments', label: 'Paiements', icon: CreditCard, roles: ['Directeur', 'Parent', 'Eleve'] },
   { id: 'messaging', label: 'Messagerie', icon: MessageSquare, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
   { id: 'ai-analyst', label: 'Analyste IA', icon: Sparkles, roles: ['Directeur', 'Enseignant'] },
   { id: 'security', label: 'Sécurité Anti-Fraude', icon: ShieldAlert, roles: ['Directeur'] },
   { id: 'settings', label: 'Paramètres', icon: Settings, roles: ['Directeur'] },
 ];
 
-export function AppLayout({ children, activeModule, setActiveModule, userRole, setUserRole }: AppLayoutProps) {
+export function AppLayout({ children, activeModule, setActiveModule, user }: AppLayoutProps) {
   const [scrolled, setScrolled] = useState(false);
   const router = useRouter();
-  
-  // Gestion de l'inactivité
-  const logout = useCallback(() => {
-    createAuditLog('user_123', userRole, 'LOGIN', 'Déconnexion automatique pour inactivité');
+  const userRole = user?.role || 'Eleve';
+
+  const handleLogout = useCallback(() => {
+    logout();
     router.push('/login');
-  }, [router, userRole]);
+  }, [router]);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     const resetTimer = () => {
       clearTimeout(timeout);
-      timeout = setTimeout(logout, 10 * 60 * 1000); // 10 minutes
+      timeout = setTimeout(handleLogout, 15 * 60 * 1000); // 15 minutes d'inactivité
     };
 
     window.addEventListener('mousemove', resetTimer);
@@ -76,7 +75,7 @@ export function AppLayout({ children, activeModule, setActiveModule, userRole, s
       window.removeEventListener('keydown', resetTimer);
       clearTimeout(timeout);
     };
-  }, [logout]);
+  }, [handleLogout]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -84,13 +83,7 @@ export function AppLayout({ children, activeModule, setActiveModule, userRole, s
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Filtrer les menus par rôle
   const allowedMenuItems = MENU_ITEMS.filter(item => item.roles.includes(userRole));
-
-  const handleLogout = () => {
-    createAuditLog('user_123', userRole, 'LOGIN', 'Déconnexion manuelle');
-    router.push('/login');
-  };
 
   return (
     <SidebarProvider defaultOpen={true}>
@@ -136,7 +129,7 @@ export function AppLayout({ children, activeModule, setActiveModule, userRole, s
           </div>
         </Sidebar>
 
-        <SidebarInset className="flex-1 flex flex-col bg-background">
+        <SidebarInset className="flex-1 flex flex-col bg-background overflow-hidden">
           <header className={cn(
             "sticky top-0 z-30 flex items-center justify-between px-6 py-3 transition-all duration-200 border-b",
             scrolled ? "bg-white/80 backdrop-blur-md shadow-sm border-border" : "bg-transparent border-transparent"
@@ -154,25 +147,6 @@ export function AppLayout({ children, activeModule, setActiveModule, userRole, s
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="flex items-center bg-white rounded-full p-1 border shadow-sm">
-                {(['Directeur', 'Enseignant', 'Parent', 'Eleve'] as Role[]).map((role) => (
-                  <button
-                    key={role}
-                    onClick={() => {
-                      setUserRole(role);
-                      setActiveModule('dashboard');
-                      createAuditLog('user_123', 'SYSTEM', 'LOGIN', `Changement de rôle vers ${role} (Simulation)`);
-                    }}
-                    className={cn(
-                      "px-3 py-1 rounded-full text-xs font-semibold transition-all",
-                      userRole === role ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:bg-secondary"
-                    )}
-                  >
-                    {role}
-                  </button>
-                ))}
-              </div>
-
               <div className="relative">
                 <Bell className="w-5 h-5 text-muted-foreground cursor-pointer" />
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full border-2 border-white font-bold">3</span>
@@ -180,19 +154,21 @@ export function AppLayout({ children, activeModule, setActiveModule, userRole, s
 
               <div className="flex items-center gap-3 pl-2 border-l">
                 <div className="text-right hidden sm:block">
-                  <p className="text-sm font-bold leading-none">Utilisateur Test</p>
-                  <p className="text-xs text-muted-foreground">{userRole}</p>
+                  <p className="text-sm font-bold leading-none">{user?.name || 'Invité'}</p>
+                  <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{user?.id}</p>
                 </div>
                 <Avatar className="w-9 h-9 border-2 border-primary/20">
-                  <AvatarImage src="https://picsum.photos/seed/admin/100/100" />
-                  <AvatarFallback>UT</AvatarFallback>
+                  <AvatarImage src={user?.photoUrl || "https://picsum.photos/seed/admin/100/100"} />
+                  <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
                 </Avatar>
               </div>
             </div>
           </header>
 
-          <main className="p-6 md:p-8 flex-1 overflow-y-auto max-w-[1440px] mx-auto w-full">
-            {children}
+          <main className="p-6 md:p-8 flex-1 overflow-y-auto w-full">
+            <div className="max-w-[1440px] mx-auto">
+              {children}
+            </div>
           </main>
         </SidebarInset>
       </div>

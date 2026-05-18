@@ -1,6 +1,17 @@
 
 export type Role = 'Directeur' | 'Enseignant' | 'Parent' | 'Eleve';
 
+export type User = {
+  id: string;
+  name: string;
+  role: Role;
+  email?: string;
+  photoUrl?: string;
+  lastLogin?: string;
+  subjectId?: string; // Pour les enseignants
+  studentId?: string; // Pour les parents/élèves
+};
+
 export type ClassLevel = 
   | '6e 1' | '6e 2' | '6e 3' | '6e 4'
   | '5e 1' | '5e 2' | '5e 3' | '5e 4'
@@ -60,7 +71,7 @@ export type AuditLog = {
   timestamp: string;
   userId: string;
   userName: string;
-  action: 'LOGIN' | 'GRADE_UPDATE' | 'GRADE_DELETE' | 'PAYMENT_RECORD' | 'ACCESS_DENIED' | 'ACCOUNT_ACTIVATION' | 'TOKEN_GENERATION';
+  action: 'LOGIN' | 'LOGOUT' | 'GRADE_UPDATE' | 'GRADE_DELETE' | 'PAYMENT_RECORD' | 'ACCESS_DENIED' | 'ACCOUNT_ACTIVATION' | 'TOKEN_GENERATION' | 'LOCKOUT';
   details: string;
   oldValue?: any;
   newValue?: any;
