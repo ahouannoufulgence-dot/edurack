@@ -7,24 +7,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ClassLevel, SUBJECTS, CoefficientEntry } from "@/lib/school-types";
+import { ClassLevel, SUBJECTS, CoefficientEntry, ALL_CLASSES } from "@/lib/school-types";
 import { Save, RotateCcw, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const STORAGE_KEY = 'edutrack_coeffs';
 
 const DEFAULT_COEFFS: CoefficientEntry[] = [
-  { classLevel: 'Terminale D', subjectId: 'math', value: 4 },
-  { classLevel: 'Terminale D', subjectId: 'pc', value: 4 },
-  { classLevel: 'Terminale D', subjectId: 'svt', value: 5 },
-  { classLevel: 'Terminale D', subjectId: 'fr', value: 3 },
-  { classLevel: '6e', subjectId: 'math', value: 4 },
-  { classLevel: '6e', subjectId: 'fr', value: 4 },
+  { classLevel: 'Tle D', subjectId: 'math', value: 4 },
+  { classLevel: 'Tle D', subjectId: 'pc', value: 4 },
+  { classLevel: 'Tle D', subjectId: 'svt', value: 5 },
+  { classLevel: 'Tle D', subjectId: 'fr', value: 3 },
+  { classLevel: '6e 1', subjectId: 'math', value: 4 },
+  { classLevel: '6e 1', subjectId: 'fr', value: 4 },
 ];
 
 export function CoefficientConfig() {
   const [coeffs, setCoeffs] = useState<CoefficientEntry[]>([]);
-  const [selectedClass, setSelectedClass] = useState<ClassLevel>('Terminale D');
+  const [selectedClass, setSelectedClass] = useState<ClassLevel>('Tle D');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export function CoefficientConfig() {
                 <SelectValue placeholder="Choisir une classe" />
               </SelectTrigger>
               <SelectContent>
-                {['6e', '5e', '4e', '3e', '2nde', '1ère A1', '1ère A2', '1ère C', '1ère D', 'Terminale A1', 'Terminale A2', 'Terminale C', 'Terminale D'].map(c => (
+                {ALL_CLASSES.map(c => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
               </SelectContent>

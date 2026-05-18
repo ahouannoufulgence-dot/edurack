@@ -2,9 +2,23 @@
 export type Role = 'Directeur' | 'Enseignant' | 'Parent' | 'Eleve';
 
 export type ClassLevel = 
-  | '6e' | '5e' | '4e' | '3e' 
-  | '2nde' | '1ère A1' | '1ère A2' | '1ère C' | '1ère D' 
-  | 'Terminale A1' | 'Terminale A2' | 'Terminale C' | 'Terminale D';
+  | '6e 1' | '6e 2' | '6e 3' | '6e 4'
+  | '5e 1' | '5e 2' | '5e 3' | '5e 4'
+  | '4e 1' | '4e 2' | '4e 3' | '4e 4'
+  | '3e 1' | '3e 2' | '3e 3' | '3e 4'
+  | '2nde A' | '2nde B' | '2nde C' | '2nde D'
+  | '1ère A' | '1ère B' | '1ère C' | '1ère D'
+  | 'Tle A' | 'Tle B' | 'Tle C' | 'Tle D';
+
+export const ALL_CLASSES: ClassLevel[] = [
+  '6e 1', '6e 2', '6e 3', '6e 4',
+  '5e 1', '5e 2', '5e 3', '5e 4',
+  '4e 1', '4e 2', '4e 3', '4e 4',
+  '3e 1', '3e 2', '3e 3', '3e 4',
+  '2nde A', '2nde B', '2nde C', '2nde D',
+  '1ère A', '1ère B', '1ère C', '1ère D',
+  'Tle A', 'Tle B', 'Tle C', 'Tle D'
+];
 
 export type Subject = {
   id: string;
@@ -54,7 +68,7 @@ export type AuditLog = {
 };
 
 export type ActivationToken = {
-  id: string; // Le code EDP-2026-XX-XXX
+  id: string;
   studentName: string;
   classLevel: ClassLevel;
   birthDate: string;

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ClassLevel, ActivationToken } from "@/lib/school-types";
+import { ClassLevel, ActivationToken, ALL_CLASSES } from "@/lib/school-types";
 import { generateBulkTokens, getTokens } from "@/lib/activation";
 import { ShieldCheck, Download, Printer, PlusCircle, Trash2, CheckCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export function TokenGenerator() {
   const [tokens, setTokens] = useState<ActivationToken[]>([]);
-  const [selectedClass, setSelectedClass] = useState<ClassLevel>('3e');
+  const [selectedClass, setSelectedClass] = useState<ClassLevel>('3e 1');
   const [count, setCount] = useState(10);
   const { toast } = useToast();
 
@@ -58,7 +58,7 @@ export function TokenGenerator() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {['6e', '5e', '4e', '3e', '2nde', '1ère D', 'Terminale D'].map(c => (
+                  {ALL_CLASSES.map(c => (
                     <SelectItem key={c} value={c}>{c}</SelectItem>
                   ))}
                 </SelectContent>

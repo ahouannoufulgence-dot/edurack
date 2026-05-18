@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
-import { Role, Student, ClassLevel } from '@/lib/school-types';
+import { Role, Student, ALL_CLASSES } from '@/lib/school-types';
 import { StatsGrid } from '@/components/dashboard/stats-grid';
 import { CoefficientConfig } from '@/components/grades/coefficient-config';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
@@ -20,10 +20,10 @@ import { createAuditLog } from '@/lib/audit';
 import { useToast } from '@/hooks/use-toast';
 
 const MOCK_STUDENTS: Student[] = [
-  { id: '1', name: 'Koffi ADEBAYO', classLevel: 'Terminale D', photoUrl: 'https://picsum.photos/seed/s1/100/100', conduct: 'Très bien', paymentStatus: 'A jour' },
-  { id: '2', name: 'Sena HOUNKPONOU', classLevel: '3e', photoUrl: 'https://picsum.photos/seed/s2/100/100', conduct: 'Bien', paymentStatus: 'Partiel' },
-  { id: '3', name: 'Bio AGOSSOU', classLevel: 'Terminale C', photoUrl: 'https://picsum.photos/seed/s3/100/100', conduct: 'Assez bien', paymentStatus: 'En retard' },
-  { id: '4', name: 'Marie TOUDONOU', classLevel: '4e', photoUrl: 'https://picsum.photos/seed/s4/100/100', conduct: 'Très bien', paymentStatus: 'A jour' },
+  { id: '1', name: 'Koffi ADEBAYO', classLevel: 'Tle D', photoUrl: 'https://picsum.photos/seed/s1/100/100', conduct: 'Très bien', paymentStatus: 'A jour' },
+  { id: '2', name: 'Sena HOUNKPONOU', classLevel: '3e 1', photoUrl: 'https://picsum.photos/seed/s2/100/100', conduct: 'Bien', paymentStatus: 'Partiel' },
+  { id: '3', name: 'Bio AGOSSOU', classLevel: 'Tle C', photoUrl: 'https://picsum.photos/seed/s3/100/100', conduct: 'Assez bien', paymentStatus: 'En retard' },
+  { id: '4', name: 'Marie TOUDONOU', classLevel: '4e 2', photoUrl: 'https://picsum.photos/seed/s4/100/100', conduct: 'Très bien', paymentStatus: 'A jour' },
 ];
 
 export default function EduTrackApp() {
@@ -32,7 +32,6 @@ export default function EduTrackApp() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const { toast } = useToast();
 
-  // Redirection si URL interdite (Simulation)
   useEffect(() => {
     if (activeModule === 'security' && userRole !== 'Directeur') {
       createAuditLog('user_123', userRole, 'ACCESS_DENIED', `Tentative d'accès au module Sécurité par un ${userRole}`, null, null, 'high');
@@ -125,7 +124,7 @@ export default function EduTrackApp() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {[
-                      { date: '12 Mars', event: 'Devoir de Math (T2)', class: 'Terminale D' },
+                      { date: '12 Mars', event: 'Devoir de Math (T2)', class: 'Tle D' },
                       { date: '15 Mars', event: 'Conseil de Classe', class: 'Collège' }
                     ].map((ev, i) => (
                       <div key={i} className="flex gap-4 items-center">
