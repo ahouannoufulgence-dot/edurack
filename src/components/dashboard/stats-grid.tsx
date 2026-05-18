@@ -3,10 +3,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, GraduationCap, Clock, TrendingUp, CreditCard } from "lucide-react";
+import { Users, Clock, TrendingUp, CreditCard } from "lucide-react";
 import { getGlobalStats } from "@/lib/data-service";
 
-export function StatsGrid() {
+interface StatsGridProps {
+  role?: string;
+}
+
+export function StatsGrid({ role }: StatsGridProps) {
   const [statsData, setStatsData] = useState({
     totalStudents: 0,
     globalAverage: "0.00",
@@ -20,21 +24,23 @@ export function StatsGrid() {
 
   useEffect(() => {
     refreshStats();
-    // Écouter les changements de stockage pour mettre à jour les stats en temps réel
     window.addEventListener('storage', refreshStats);
     return () => window.removeEventListener('storage', refreshStats);
   }, []);
 
-  const stats = [
+  const allStats = [
     { label: "Effectif Total", value: statsData.totalStudents.toString(), icon: Users, color: "bg-blue-500", trend: "+2.4%" },
     { label: "Moyenne Générale", value: statsData.globalAverage, icon: TrendingUp, color: "bg-emerald-700", trend: "+0.8%" },
-    { label: "Recettes Totales", value: statsData.totalRevenue, icon: CreditCard, color: "bg-orange-500", trend: "+12%" },
+    { label: "Recettes Totales", value: statsData.totalRevenue, icon: CreditCard, color: "bg-orange-500", trend: "+12%", private: true },
     { label: "Taux de Présence", value: statsData.attendanceRate, icon: Clock, color: "bg-purple-500", trend: "Stable" },
   ];
 
+  // Filtrer les statistiques selon le rôle
+  const visibleStats = allStats.filter(stat => !stat.private || role === 'Directeur');
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {stats.map((stat, i) => (
+    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${visibleStats.length} gap-6`}>
+      {visibleStats.map((stat, i) => (
         <Card key={i} className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all bg-white/50 backdrop-blur-sm">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">

@@ -58,7 +58,7 @@ export default function EduTrackApp() {
               </div>
             </div>
             
-            <StatsGrid />
+            <StatsGrid role={user.role} />
 
             <div className="grid lg:grid-cols-3 gap-8">
               <Card className="lg:col-span-2 border-none shadow-md overflow-hidden">
