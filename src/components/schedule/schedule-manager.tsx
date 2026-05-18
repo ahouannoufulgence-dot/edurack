@@ -13,7 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
-const HOURS = Array.from({ length: 12 }, (_, i) => `${(i + 7).toString().padStart(2, '0')}:00`);
+const START_HOURS = Array.from({ length: 12 }, (_, i) => `${(i + 7).toString().padStart(2, '0')}:00`);
+const END_HOURS = Array.from({ length: 13 }, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`);
 
 export function ScheduleManager({ user }: { user: User }) {
   const [selectedClass, setSelectedClass] = useState("3e 1");
@@ -28,6 +29,7 @@ export function ScheduleManager({ user }: { user: User }) {
   const [newSlot, setNewSlot] = useState<Partial<EmploiDuTemps>>({
     jour: "Lundi",
     heureDebut: "07:00",
+    heureFin: "09:00",
     matiereId: availableSubjects[0]?.id || "math",
     salle: "Salle 01"
   });
@@ -38,20 +40,25 @@ export function ScheduleManager({ user }: { user: User }) {
   }, []);
 
   const handleAddSlot = () => {
-    if (!newSlot.matiereId || !newSlot.heureDebut || !newSlot.jour) {
+    if (!newSlot.matiereId || !newSlot.heureDebut || !newSlot.heureFin || !newSlot.jour) {
       toast({ variant: "destructive", title: "Erreur", description: "Veuillez remplir tous les champs." });
       return;
     }
     
-    const hourNum = parseInt(newSlot.heureDebut.split(':')[0]);
-    const endHour = `${(hourNum + 2).toString().padStart(2, '0')}:00`;
+    const startHour = parseInt(newSlot.heureDebut.split(':')[0]);
+    const endHour = parseInt(newSlot.heureFin.split(':')[0]);
+
+    if (endHour <= startHour) {
+      toast({ variant: "destructive", title: "Erreur", description: "L'heure de fin doit être après l'heure de début." });
+      return;
+    }
 
     const slot: EmploiDuTemps = {
       edtId: `EDT-${Date.now()}`,
       classeId: selectedClass,
       jour: newSlot.jour!,
       heureDebut: newSlot.heureDebut!,
-      heureFin: endHour,
+      heureFin: newSlot.heureFin!,
       matiereId: newSlot.matiereId!,
       enseignantId: user.role === 'Enseignant' ? user.id : (SUBJECTS.find(s => s.id === newSlot.matiereId)?.enseignantId || ""),
       salle: newSlot.salle || "N/A"
@@ -104,7 +111,7 @@ export function ScheduleManager({ user }: { user: User }) {
       {isAdding && canEdit && (
         <Card className="border-emerald-200 bg-white shadow-xl animate-in slide-in-from-top duration-300 border-2">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase text-slate-500">Matière</label>
                 <Select value={newSlot.matiereId} onValueChange={v => setNewSlot({...newSlot, matiereId: v})}>
@@ -126,12 +133,21 @@ export function ScheduleManager({ user }: { user: User }) {
                 </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-500">Heure du cours</label>
+                <label className="text-xs font-black uppercase text-slate-500">Début</label>
                 <Select value={newSlot.heureDebut} onValueChange={v => setNewSlot({...newSlot, heureDebut: v})}>
                   <SelectTrigger className="bg-slate-50 border-none h-12 rounded-xl">
-                    <SelectValue placeholder="Heure" />
+                    <SelectValue placeholder="Début" />
                   </SelectTrigger>
-                  <SelectContent>{HOURS.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent>
+                  <SelectContent>{START_HOURS.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase text-slate-500">Fin</label>
+                <Select value={newSlot.heureFin} onValueChange={v => setNewSlot({...newSlot, heureFin: v})}>
+                  <SelectTrigger className="bg-slate-50 border-none h-12 rounded-xl">
+                    <SelectValue placeholder="Fin" />
+                  </SelectTrigger>
+                  <SelectContent>{END_HOURS.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
@@ -163,12 +179,10 @@ export function ScheduleManager({ user }: { user: User }) {
               ))}
             </div>
 
-            {HOURS.map(hour => (
+            {START_HOURS.map(hour => (
               <div key={hour} className="grid grid-cols-7 border-b group min-h-[95px]">
                 <div className="p-4 border-r bg-slate-50/50 flex flex-col items-center justify-center">
                   <span className="text-xs font-mono font-black text-slate-600">{hour}</span>
-                  <div className="h-4 w-[2px] bg-emerald-200 my-1" />
-                  <span className="text-[10px] font-mono text-slate-400">{(parseInt(hour)+2).toString().padStart(2, '0')}:00</span>
                 </div>
                 {DAYS.map(day => {
                   const slot = getSlotAt(day, hour);
@@ -184,8 +198,11 @@ export function ScheduleManager({ user }: { user: User }) {
                     >
                       {slot ? (
                         <div className="w-full animate-in zoom-in duration-300">
-                          <p className="text-[10px] font-black text-emerald-950 leading-tight uppercase mb-2">
+                          <p className="text-[10px] font-black text-emerald-950 leading-tight uppercase mb-1">
                             {subject?.name}
+                          </p>
+                          <p className="text-[9px] font-mono text-emerald-600 mb-1">
+                            {slot.heureDebut} - {slot.heureFin}
                           </p>
                           <div className="flex items-center justify-center gap-1.5 text-[9px] text-emerald-700 font-bold bg-white/60 py-1 px-2 rounded-full inline-flex">
                             <MapPin className="w-2.5 h-2.5" /> {slot.salle}
