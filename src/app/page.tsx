@@ -13,7 +13,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { RemediationReport } from '@/components/ai/remediation-report';
 import { SecurityDashboard } from '@/components/security/security-dashboard';
-import { FileText, ChevronRight, Filter, Download, Sparkles, BrainCircuit, Lock, Unlock, ShieldAlert, QrCode } from 'lucide-react';
+import { TokenGenerator } from '@/components/admin/token-generator';
+import { FileText, ChevronRight, Filter, Download, Sparkles, BrainCircuit, Lock, Unlock, ShieldAlert, QrCode, UserPlus } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { createAuditLog } from '@/lib/audit';
 import { useToast } from '@/hooks/use-toast';
@@ -142,16 +143,16 @@ export default function EduTrackApp() {
                 </Card>
 
                 {userRole === 'Directeur' && (
-                  <Card className="bg-red-600 text-white border-none shadow-lg">
+                  <Card className="bg-emerald-600 text-white border-none shadow-lg">
                     <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2"><ShieldAlert className="w-5 h-5" /> Alertes Sécurité</CardTitle>
+                      <CardTitle className="text-lg flex items-center gap-2"><UserPlus className="w-5 h-5" /> Inscriptions IA</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-red-50 mb-4 leading-relaxed">
-                        3 tentatives d'accès refusé détectées aujourd'hui.
+                      <p className="text-sm text-emerald-50 mb-4 leading-relaxed">
+                        Générez des codes d'activation pour vos nouveaux élèves en un clic.
                       </p>
-                      <Button variant="secondary" size="sm" className="w-full font-bold" onClick={() => setActiveModule('security')}>
-                        Vérifier les Traces
+                      <Button variant="secondary" size="sm" className="w-full font-bold" onClick={() => setActiveModule('inscriptions')}>
+                        Gérer les Inscriptions
                       </Button>
                     </CardContent>
                   </Card>
@@ -163,6 +164,9 @@ export default function EduTrackApp() {
 
       case 'security':
         return <SecurityDashboard />;
+      
+      case 'inscriptions':
+        return <TokenGenerator />;
 
       case 'settings':
         return <CoefficientConfig />;

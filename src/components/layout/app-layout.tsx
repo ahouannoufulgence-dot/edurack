@@ -19,7 +19,8 @@ import {
   Sparkles,
   ShieldCheck,
   ShieldAlert,
-  Fingerprint
+  Fingerprint,
+  UserPlus
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Role } from "@/lib/school-types";
@@ -39,6 +40,7 @@ const MENU_ITEMS = [
   { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
   { id: 'grades', label: 'Notes & Résultats', icon: FileText, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
   { id: 'students', label: 'Gestion Elèves', icon: UserRound, roles: ['Directeur', 'Enseignant'] },
+  { id: 'inscriptions', label: 'Inscriptions', icon: UserPlus, roles: ['Directeur'] },
   { id: 'absences', label: 'Absences & Discipline', icon: Clock, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
   { id: 'schedule', label: 'Emploi du temps', icon: Calendar, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
   { id: 'payments', label: 'Paiements', icon: CreditCard, roles: ['Directeur', 'Parent'] },

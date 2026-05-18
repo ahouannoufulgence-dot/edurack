@@ -46,21 +46,22 @@ export type AuditLog = {
   timestamp: string;
   userId: string;
   userName: string;
-  action: 'LOGIN' | 'GRADE_UPDATE' | 'GRADE_DELETE' | 'PAYMENT_RECORD' | 'ACCESS_DENIED';
+  action: 'LOGIN' | 'GRADE_UPDATE' | 'GRADE_DELETE' | 'PAYMENT_RECORD' | 'ACCESS_DENIED' | 'ACCOUNT_ACTIVATION' | 'TOKEN_GENERATION';
   details: string;
   oldValue?: any;
   newValue?: any;
   severity: 'low' | 'medium' | 'high' | 'critical';
 };
 
-export type PaymentRecord = {
-  id: string;
-  receiptNumber: string;
-  studentId: string;
-  amount: number;
-  date: string;
-  cashierId: string;
-  qrCodeData: string;
+export type ActivationToken = {
+  id: string; // Le code EDP-2026-XX-XXX
+  studentName: string;
+  classLevel: ClassLevel;
+  birthDate: string;
+  parentPhone: string;
+  status: 'pending' | 'activated' | 'expired';
+  activatedAt?: string;
+  attempts: number;
 };
 
 export type Student = {
@@ -71,6 +72,9 @@ export type Student = {
   conduct: ConductGrade;
   paymentStatus: 'A jour' | 'En retard' | 'Partiel';
   parentId?: string;
+  isActivated?: boolean;
+  email?: string;
+  secretQuestion?: string;
 };
 
 export const SUBJECTS: Subject[] = [

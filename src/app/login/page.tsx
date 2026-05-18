@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShieldCheck, Eye, EyeOff, Smartphone, Mail, Loader2 } from "lucide-react";
+import { ShieldCheck, Eye, EyeOff, Smartphone, Mail, Loader2, Sparkles } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { createAuditLog } from '@/lib/audit';
 
@@ -93,6 +93,13 @@ export default function LoginPage() {
               </form>
             </TabsContent>
           </Tabs>
+          
+          <div className="mt-8 pt-6 border-t text-center">
+            <p className="text-sm text-muted-foreground mb-4">Nouvel élève ?</p>
+            <Button variant="outline" className="w-full border-emerald-200 text-emerald-700 hover:bg-emerald-50" onClick={() => router.push('/activate')}>
+              <Sparkles className="w-4 h-4 mr-2" /> Activer mon compte scolaire
+            </Button>
+          </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-2 text-center text-xs text-muted-foreground">
           <p>© 2024 EduTrack Pro - Système Anti-Fraude Actif</p>
