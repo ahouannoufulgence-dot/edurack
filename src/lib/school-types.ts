@@ -44,6 +44,24 @@ export type GradeRecord = {
   dateAjout: string;
 };
 
+export type AbsenceRecord = {
+  absenceId: string;
+  eleveId: string;
+  date: string;
+  motif: string;
+  justification?: string;
+  auteur?: string;
+};
+
+export type DisciplineRecord = {
+  incidentId: string;
+  eleveId: string;
+  type: string;
+  description: string;
+  sanction: string;
+  date: string;
+};
+
 export type Subject = {
   matiereId: string;
   nom: string;

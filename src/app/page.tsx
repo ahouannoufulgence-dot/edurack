@@ -9,6 +9,7 @@ import { CoefficientConfig } from '@/components/grades/coefficient-config';
 import { UserGuide } from '@/components/dashboard/user-guide';
 import { StudentManager } from '@/components/students/student-manager';
 import { GradeManager } from '@/components/grades/grade-manager';
+import { DisciplineManager } from '@/components/discipline/discipline-manager';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -140,6 +141,9 @@ export default function EduTrackApp() {
 
       case 'grades':
         return <GradeManager user={user} />;
+
+      case 'absences':
+        return <DisciplineManager />;
 
       case 'settings':
         return <CoefficientConfig />;
