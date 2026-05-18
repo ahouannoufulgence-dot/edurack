@@ -38,36 +38,22 @@ const DEMO_ACCOUNTS: StoredUser[] = [
   },
 ];
 
-/**
- * Initialise les comptes de démo si nécessaire.
- * S'assure que les comptes par défaut sont présents même si le stockage existe.
- */
-function initializeDemoUsers() {
+export function initializeDemoUsers(force = false) {
   if (typeof window === 'undefined') return;
   
   const existingRaw = localStorage.getItem(USERS_KEY);
-  let users: StoredUser[] = [];
-  
-  if (existingRaw) {
-    users = JSON.parse(existingRaw);
-  }
-
-  // Vérifier si les comptes de démo sont présents, sinon les ajouter
-  let updated = false;
-  DEMO_ACCOUNTS.forEach(demo => {
-    if (!users.find(u => u.id === demo.id)) {
-      users.push(demo);
-      updated = true;
+  if (!existingRaw || force) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(DEMO_ACCOUNTS));
+    if (force) {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(LOCKOUT_KEY);
+      createAuditLog('SYSTEM', 'Admin', 'LOGIN', 'Réinitialisation complète du système effectuée', null, null, 'high');
     }
-  });
-
-  if (updated || !existingRaw) {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
   }
 }
 
 export function getRoleFromId(id: string): Role | null {
-  const upperId = id.toUpperCase();
+  const upperId = id.trim().toUpperCase();
   if (upperId.startsWith('DIR-')) return 'Directeur';
   if (upperId.startsWith('ENS-')) return 'Enseignant';
   if (upperId.startsWith('ELV-')) return 'Eleve';
@@ -79,33 +65,27 @@ export function login(userIdInput: string, passwordInput: string): { success: bo
   initializeDemoUsers();
   
   const userId = userIdInput.trim();
-  const password = passwordInput;
+  const password = passwordInput.trim();
   const role = getRoleFromId(userId);
   
   if (!role) {
-    return { success: false, message: "Identifiant invalide (Le format doit être DIR-..., ENS-..., ELV-... ou PAR-...)." };
+    return { success: false, message: "Identifiant invalide. Utilisez le format DIR-..., ENS-..., ELV-... ou PAR-..." };
   }
 
-  // Vérifier le lockout
   const attempts = JSON.parse(localStorage.getItem(LOCKOUT_KEY) || '{}');
-  if (attempts[userId] >= 3) {
-    createAuditLog(userId, 'Inconnu', 'LOCKOUT', `Compte verrouillé après 3 échecs`, null, null, 'high');
-    return { success: false, message: "Compte verrouillé suite à plusieurs échecs. Contactez l'administration." };
+  if (attempts[userId] >= 5) {
+    createAuditLog(userId, 'Inconnu', 'LOCKOUT', `Compte verrouillé après 5 échecs`, null, null, 'critical');
+    return { success: false, message: "Compte verrouillé. Contactez l'administration." };
   }
 
-  // Récupérer les utilisateurs
   const users: StoredUser[] = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-  
-  // Chercher l'utilisateur avec l'ID (insensible à la casse pour l'ID) et le mot de passe (sensible à la casse)
   const userMatch = users.find(u => u.id.toUpperCase() === userId.toUpperCase() && u.password === password);
 
   if (userMatch) {
     const { password: _, ...userSession } = userMatch;
-    
     localStorage.setItem(SESSION_KEY, JSON.stringify(userSession));
-    createAuditLog(userSession.id, userSession.name, 'LOGIN', `Connexion réussie en tant que ${role}`);
+    createAuditLog(userSession.id, userSession.name, 'LOGIN', `Connexion réussie : ${role}`);
     
-    // Reset attempts
     delete attempts[userId];
     localStorage.setItem(LOCKOUT_KEY, JSON.stringify(attempts));
     
@@ -113,7 +93,7 @@ export function login(userIdInput: string, passwordInput: string): { success: bo
   } else {
     attempts[userId] = (attempts[userId] || 0) + 1;
     localStorage.setItem(LOCKOUT_KEY, JSON.stringify(attempts));
-    createAuditLog(userId, 'Inconnu', 'ACCESS_DENIED', `Échec de connexion (Tentative ${attempts[userId]}/3) pour l'identifiant ${userId}`);
+    createAuditLog(userId, 'Inconnu', 'ACCESS_DENIED', `Échec de connexion (Tentative ${attempts[userId]}/5)`);
     return { success: false, message: "Identifiant ou mot de passe incorrect." };
   }
 }
@@ -127,7 +107,7 @@ export function getCurrentUser(): User | null {
 export function logout() {
   const user = getCurrentUser();
   if (user) {
-    createAuditLog(user.id, user.name, 'LOGOUT', "Déconnexion manuelle");
+    createAuditLog(user.id, user.name, 'LOGOUT', "Déconnexion session");
   }
   localStorage.removeItem(SESSION_KEY);
 }
