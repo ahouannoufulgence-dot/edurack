@@ -1,7 +1,8 @@
-import { ActivationToken, ClassLevel } from './school-types';
+import { ActivationToken, ClassLevel, User } from './school-types';
 import { createAuditLog } from './audit';
 
 const STORAGE_KEY = 'edutrack_activation_tokens';
+const USERS_KEY = 'edutrack_users';
 
 export function getTokens(): ActivationToken[] {
   if (typeof window === 'undefined') return [];
@@ -10,7 +11,6 @@ export function getTokens(): ActivationToken[] {
 
 export function resetTokens() {
   localStorage.removeItem(STORAGE_KEY);
-  // Pré-générer un token pour le compte démo élève si besoin
   generateBulkTokens('Tle D', 5);
 }
 
@@ -54,7 +54,7 @@ export function generateBulkTokens(classLevel: ClassLevel, count: number): Activ
 
 export function verifyActivation(tokenId: string, birthDate: string, parentPhone: string): { success: boolean; message: string; token?: ActivationToken } {
   const tokens = getTokens();
-  const tokenIndex = tokens.findIndex(t => t.id === tokenId);
+  const tokenIndex = tokens.findIndex(t => t.id.toUpperCase() === tokenId.toUpperCase());
   
   if (tokenIndex === -1) {
     return { success: false, message: "Identifiant non reconnu." };
@@ -70,6 +70,7 @@ export function verifyActivation(tokenId: string, birthDate: string, parentPhone
     return { success: false, message: "Identifiant bloqué. Contactez le surveillant." };
   }
 
+  // Normalisation des entrées pour la comparaison
   if (token.birthDate === birthDate && token.parentPhone === parentPhone) {
     return { success: true, message: "Vérification réussie.", token };
   } else {
@@ -81,22 +82,37 @@ export function verifyActivation(tokenId: string, birthDate: string, parentPhone
   }
 }
 
-export function completeActivation(tokenId: string, data: { email: string; photoUrl: string; secretQuestion: string }) {
+export function completeActivation(tokenId: string, data: { email: string; photoUrl: string; secretQuestion: string; password?: string }) {
   const tokens = getTokens();
-  const tokenIndex = tokens.findIndex(t => t.id === tokenId);
+  const tokenIndex = tokens.findIndex(t => t.id.toUpperCase() === tokenId.toUpperCase());
   
   if (tokenIndex !== -1) {
-    tokens[tokenIndex].status = 'activated';
-    tokens[tokenIndex].activatedAt = new Date().toISOString();
+    const token = tokens[tokenIndex];
+    token.status = 'activated';
+    token.activatedAt = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
     
+    // Création de l'utilisateur effectif pour permettre le login
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+    const newUser: User & { password?: string } = {
+      id: token.id,
+      name: token.studentName,
+      role: 'Eleve',
+      email: data.email,
+      photoUrl: data.photoUrl,
+      studentId: token.id,
+      password: data.password || 'Pass1234'
+    };
+    
+    localStorage.setItem(USERS_KEY, JSON.stringify([...users, newUser]));
+
     createAuditLog(
-      tokenId, 
-      tokens[tokenIndex].studentName, 
+      token.id, 
+      token.studentName, 
       'ACCOUNT_ACTIVATION', 
-      `Activation finale terminée`,
+      `Activation finale terminée et compte créé`,
       null,
-      data,
+      { email: data.email },
       'medium'
     );
   }

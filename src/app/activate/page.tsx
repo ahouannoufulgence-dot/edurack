@@ -17,7 +17,8 @@ import {
   GraduationCap,
   Activity,
   Lock,
-  Smartphone
+  Smartphone,
+  Info
 } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { verifyActivation, completeActivation } from '@/lib/activation';
@@ -44,7 +45,6 @@ export default function ActivationPage() {
     e.preventDefault();
     setLoading(true);
     
-    // Simulation délai réseau
     setTimeout(() => {
       const result = verifyActivation(formData.tokenId, formData.birthDate, formData.parentPhone);
       if (result.success) {
@@ -65,7 +65,8 @@ export default function ActivationPage() {
       completeActivation(formData.tokenId, {
         email: formData.email,
         photoUrl: 'https://picsum.photos/seed/user/200/200',
-        secretQuestion: formData.secretQuestion
+        secretQuestion: formData.secretQuestion,
+        password: formData.password
       });
       setStep(3);
       setLoading(false);
@@ -74,7 +75,6 @@ export default function ActivationPage() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-slate-900">
-      {/* Background cinématique */}
       <div className="absolute inset-0 z-0">
         {bgImage && (
           <div className="relative w-full h-full overflow-hidden">
@@ -84,7 +84,6 @@ export default function ActivationPage() {
               fill
               className="object-cover animate-zoom-slow"
               priority
-              data-ai-hint="african students laughing"
             />
             <div className="absolute inset-0 bg-black/40 z-10" />
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/40 via-transparent to-blue-900/40 z-15" />
@@ -92,10 +91,9 @@ export default function ActivationPage() {
         )}
       </div>
 
-      {/* Slogan supérieur */}
       <div className="absolute top-8 left-0 right-0 z-20 text-center animate-in fade-in slide-in-from-top duration-1000">
         <p className="text-white/90 text-sm font-bold tracking-[0.2em] uppercase">
-          Rejoignez l'excellence numérique
+          Apprendre aujourd'hui, réussir demain
         </p>
       </div>
 
@@ -117,11 +115,19 @@ export default function ActivationPage() {
         <CardContent className="px-8 pb-8">
           {step === 1 && (
             <form onSubmit={handleStep1} className="space-y-5">
-              <div className="bg-emerald-50/80 border border-emerald-100 p-4 rounded-2xl flex gap-3 mb-2">
-                <AlertCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-emerald-800 leading-relaxed font-medium">
-                  Utilisez l'identifiant <span className="font-bold">EDP-2026</span> figurant sur votre fiche d'inscription officielle.
-                </p>
+              <div className="bg-emerald-50/90 border border-emerald-100 p-4 rounded-2xl space-y-2 mb-2">
+                <div className="flex gap-3">
+                  <AlertCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-emerald-800 leading-relaxed font-medium">
+                    Saisissez l'identifiant remis par l'école (ex: EDP-2026-...).
+                  </p>
+                </div>
+                <div className="flex gap-3 pt-2 border-t border-emerald-100/50">
+                  <Info className="w-4 h-4 text-blue-600 shrink-0" />
+                  <p className="text-[10px] text-blue-800 italic">
+                    Prototype : Utilisez <strong>2010-01-01</strong> et <strong>00000000</strong> pour tester avec n'importe quel code généré.
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -238,12 +244,12 @@ export default function ActivationPage() {
               <div>
                 <h2 className="text-3xl font-black text-slate-800">Compte Activé !</h2>
                 <p className="text-slate-500 font-medium mt-3 leading-relaxed">
-                  Félicitations ! Vous avez maintenant accès à l'ensemble des services EduTrack Pro.
+                  Félicitations ! Votre compte est maintenant créé. Vous pouvez vous connecter avec votre identifiant <strong>{formData.tokenId}</strong>.
                 </p>
               </div>
 
               <Button className="w-full bg-blue-600 hover:bg-blue-700 h-14 rounded-xl text-white font-bold shadow-lg gap-2 text-lg" onClick={() => router.push('/login')}>
-                Accéder à mon espace <ArrowRight className="w-5 h-5" />
+                Se connecter maintenant <ArrowRight className="w-5 h-5" />
               </Button>
             </div>
           )}
@@ -257,10 +263,9 @@ export default function ActivationPage() {
         </CardFooter>
       </Card>
 
-      {/* Footer Branding */}
       <div className="absolute bottom-8 left-0 right-0 z-20 text-center">
         <p className="text-white/50 text-[10px] font-medium flex items-center justify-center gap-2">
-          <ShieldCheck className="w-3 h-3" /> Système de gestion sécurisé pour établissements scolaires au Bénin
+          <ShieldCheck className="w-3 h-3" /> Système de gestion sécurisé EduTrack Pro
         </p>
       </div>
     </div>
