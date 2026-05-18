@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -5,7 +6,19 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ShieldAlert, History, UserCheck, AlertTriangle, Fingerprint, Activity, RefreshCcw, ShieldCheck, Globe, Monitor, Trash2 } from "lucide-react";
+import { 
+  ShieldAlert, 
+  History, 
+  UserCheck, 
+  AlertTriangle, 
+  Fingerprint, 
+  Activity, 
+  ShieldCheck, 
+  Globe, 
+  Trash2,
+  Download,
+  Database
+} from "lucide-react";
 import { getAuditLogs } from "@/lib/audit";
 import { AuditLog } from "@/lib/school-types";
 import { initializeDemoUsers } from "@/lib/auth-service";
@@ -34,6 +47,36 @@ export function SecurityDashboard() {
     }
   };
 
+  const handleExportData = () => {
+    const data: Record<string, any> = {};
+    const keys = [
+      'edutrack_users', 'edutrack_grades', 'edutrack_payments', 
+      'edutrack_audit_logs', 'edutrack_absences', 'edutrack_discipline',
+      'edutrack_messages', 'edutrack_coeffs', 'edutrack_schedule',
+      'edutrack_config', 'edutrack_archives', 'edutrack_activation_tokens'
+    ];
+    
+    keys.forEach(key => {
+      const val = localStorage.getItem(key);
+      if (val) data[key] = JSON.parse(val);
+    });
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `EduTrack_Pro_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Sauvegarde réussie",
+      description: "Le fichier de données de l'application a été téléchargé."
+    });
+  };
+
   const criticalCount = logs.filter(l => l.severity === 'critical').length;
   const threatLevel = criticalCount > 5 ? 'Elevé' : criticalCount > 2 ? 'Modéré' : 'Bas';
 
@@ -55,12 +98,12 @@ export function SecurityDashboard() {
           <p className="text-muted-foreground">Surveillance cyber-pédagogique et journalisation immuable.</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportData} className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 shadow-sm">
+            <Download className="w-4 h-4" /> Sauvegarder les données
+          </Button>
           <Button variant="destructive" size="sm" onClick={handleFullReset} className="gap-2 shadow-lg">
             <Trash2 className="w-4 h-4" /> Remettre à zéro
           </Button>
-          <Badge className="bg-emerald-600 px-4 py-1 gap-2 hidden md:flex">
-            <ShieldCheck className="w-4 h-4" /> Protection Active v2.0
-          </Badge>
         </div>
       </div>
 
@@ -159,30 +202,25 @@ export function SecurityDashboard() {
         <Card className="border-none shadow-lg bg-slate-900 text-white">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2 text-emerald-400">
-              <ShieldAlert className="w-5 h-5" /> IPs Restreintes
+              <Database className="w-5 h-5" /> État du Stockage
             </CardTitle>
-            <CardDescription className="text-slate-400">Sécurité adaptative couche 7.</CardDescription>
+            <CardDescription className="text-slate-400">Exportation et sauvegarde des données.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {[
-              { ip: '197.234.34.12', origin: 'Cotonou, BJ', status: 'Verrouillé', date: 'Il y a 2 min' },
-              { ip: '41.85.23.1', origin: 'Porto-Novo, BJ', status: 'Observation', date: 'Il y a 15 min' }
-            ].map((entry, idx) => (
-              <div key={idx} className="flex justify-between items-center p-3 rounded-lg bg-white/5 border border-white/10">
-                <div>
-                  <p className="text-sm font-mono font-bold">{entry.ip}</p>
-                  <p className="text-[10px] text-slate-400">{entry.origin}</p>
-                </div>
-                <div className="text-right">
-                  <Badge variant={entry.status === 'Verrouillé' ? 'destructive' : 'secondary'} className="text-[9px] h-4">
-                    {entry.status}
-                  </Badge>
-                  <p className="text-[9px] text-slate-500 mt-1">{entry.date}</p>
-                </div>
-              </div>
-            ))}
+            <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
+              <p className="text-xs text-slate-300">
+                Utilisez le bouton de sauvegarde pour exporter l'intégralité de la base de données locale au format JSON.
+              </p>
+              <Button 
+                onClick={handleExportData} 
+                className="w-full bg-emerald-600 hover:bg-emerald-700 h-10 gap-2 font-bold"
+              >
+                <Download className="w-4 h-4" /> Exporter maintenant
+              </Button>
+            </div>
+            
             <div className="pt-4 mt-4 border-t border-white/10">
-              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-2">Statut Pare-feu</p>
+              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-2">Statut Sécurité</p>
               <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
                 <div className="h-full bg-emerald-500 w-full" />
               </div>
