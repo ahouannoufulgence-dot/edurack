@@ -29,45 +29,35 @@ export function saveToStorage<T>(key: string, data: T[]) {
   window.dispatchEvent(new Event('storage'));
 }
 
+/**
+ * Système de coefficients dynamiques selon les séries béninoises
+ */
 export function getCoefficient(classLevel: string, subjectId: string): number {
   const coeffs = getFromStorage<CoefficientEntry>(KEYS.COEFFS);
-  const entry = coeffs.find(c => c.classLevel === classLevel && c.subjectId === subjectId);
-  if (entry) return entry.value;
+  const customEntry = coeffs.find(c => c.classLevel === classLevel && c.subjectId === subjectId);
+  if (customEntry) return customEntry.value;
 
-  // Fallback par défaut selon les standards béninois
-  const isSecondaire = !classLevel.includes('Tle') && !classLevel.includes('1ère') && !classLevel.includes('2nde');
-  const isSerieD = classLevel.includes('D');
-  const isSerieC = classLevel.includes('C');
-  const isSerieA = classLevel.includes('A') || classLevel.includes('B');
+  const isPremierCycle = ['6e', '5e', '4e', '3e'].some(c => classLevel.includes(c));
+  const isSerieC = classLevel.includes(' C');
+  const isSerieD = classLevel.includes(' D');
+  const isSerieA = classLevel.includes(' A') || classLevel.includes(' B');
 
-  if (subjectId === 'math') {
-    if (isSerieC) return 6;
-    if (isSerieD || isSecondaire) return 4;
-    return 2;
-  }
-  if (subjectId === 'pc') {
-    if (isSerieC) return 5;
-    if (isSerieD) return 4;
-    if (isSecondaire) return 2;
-    return 1;
-  }
-  if (subjectId === 'svt') {
-    if (isSerieD) return 5;
-    if (isSecondaire) return 2;
-    return 1;
-  }
-  if (subjectId === 'fr') {
-    if (isSerieA) return 5;
-    return 4;
-  }
-  if (subjectId === 'philo') {
-    if (isSerieA) return 4;
-    return 2;
-  }
-  if (subjectId === 'ang') return 3;
-  if (subjectId === 'hg') return 2;
-  
-  return 1;
+  // Logique de coefficients par défaut (Bénin)
+  const defaultCoeffs: Record<string, number> = {
+    'math': isSerieC ? 6 : (isSerieD || isPremierCycle ? 4 : 2),
+    'pc': isSerieC ? 5 : (isSerieD ? 4 : (isPremierCycle ? 2 : 1)),
+    'svt': isSerieD ? 5 : (isPremierCycle || isSerieC ? 2 : 1),
+    'fr': isSerieA ? 5 : 4,
+    'philo': isSerieA ? 4 : 2,
+    'ang': isSerieA ? 4 : 3,
+    'hg': isSerieA ? 3 : 2,
+    'eps': 1,
+    'allemand': 2,
+    'espagnol': 2,
+    'ct': 1
+  };
+
+  return defaultCoeffs[subjectId] || 1;
 }
 
 export function registerUser(data: {
@@ -81,68 +71,41 @@ export function registerUser(data: {
   secretQuestion?: string;
   secretAnswer?: string;
 }) {
-  try {
-    const users = getFromStorage<User>(KEYS.USERS);
-    const fullName = `${data.prenom} ${data.nom}`.toUpperCase();
-    const tempId = `TEMP-${Date.now()}`;
-    
-    const newUser: User = {
-      id: tempId,
-      identifiant: tempId,
-      name: fullName,
-      nom: data.nom.toUpperCase(),
-      prenom: data.prenom,
-      sexe: data.sexe,
-      classLevel: data.classLevel,
-      classeId: data.classLevel,
-      subjectId: data.subjectId,
-      matieresAttribuees: data.subjectId ? [data.subjectId] : [],
-      role: data.role,
-      password: data.password || 'Pass1234',
-      questionSecrete: data.secretQuestion,
-      reponseSecrete: data.secretAnswer,
-      statutCompte: 'actif',
-      dateCreation: new Date().toISOString(),
-      premierAcces: false,
-      idHistory: []
-    };
+  const users = getFromStorage<User>(KEYS.USERS);
+  const fullName = `${data.prenom} ${data.nom}`.toUpperCase();
+  
+  const prefix = data.role === 'Eleve' ? 'ELV' : data.role === 'Enseignant' ? 'ENS' : 'DIR';
+  const classCode = data.classLevel ? data.classLevel.replace(/\s/g, '').toUpperCase() : 'GEN';
+  const sequence = (users.filter(u => u.role === data.role).length + 1).toString().padStart(3, '0');
+  const finalId = `${prefix}-${classCode}-${sequence}`;
 
-    saveToStorage(KEYS.USERS, [...users, newUser]);
-    
-    const syncClass = data.role === 'Eleve' ? (data.classLevel as ClassLevel) : undefined;
-    syncIdentitySystem(syncClass);
-    
-    const updatedUsers = getFromStorage<User>(KEYS.USERS);
-    const finalUser = updatedUsers.find(u => u.name === fullName && u.role === data.role);
-    
-    createAuditLog(
-      finalUser?.id || tempId,
-      fullName,
-      'STUDENT_ADD',
-      `Création de compte réussie : ${data.role}`
-    );
+  const newUser: User = {
+    id: finalId,
+    identifiant: finalId,
+    name: fullName,
+    nom: data.nom.toUpperCase(),
+    prenom: data.prenom,
+    sexe: data.sexe,
+    classLevel: data.classLevel,
+    classeId: data.classLevel,
+    subjectId: data.subjectId,
+    matieresAttribuees: data.subjectId ? [data.subjectId] : [],
+    role: data.role,
+    password: data.password || 'Pass1234',
+    questionSecrete: data.secretQuestion,
+    reponseSecrete: data.secretAnswer,
+    statutCompte: 'actif',
+    dateCreation: new Date().toISOString(),
+    premierAcces: false
+  };
 
-    return finalUser?.id || tempId;
-  } catch (error) {
-    console.error("Erreur inscription:", error);
-    throw error;
-  }
+  saveToStorage(KEYS.USERS, [...users, newUser]);
+  createAuditLog(finalId, fullName, 'STUDENT_ADD', `Création manuelle du compte ${finalId}`);
+  return finalId;
 }
 
 export function addStudent(data: any) {
   return registerUser({ ...data, role: 'Eleve' });
-}
-
-export function addAbsence(absence: Partial<AbsenceRecord>) {
-  const absences = getFromStorage<AbsenceRecord>(KEYS.ABSENCES);
-  const newAbsence = { ...absence, absenceId: `ABS-${Date.now()}` } as AbsenceRecord;
-  saveToStorage(KEYS.ABSENCES, [newAbsence, ...absences]);
-}
-
-export function addIncident(incident: Partial<DisciplineRecord>) {
-  const incidents = getFromStorage<DisciplineRecord>(KEYS.DISCIPLINE);
-  const newIncident = { ...incident, incidentId: `DIS-${Date.now()}` } as DisciplineRecord;
-  saveToStorage(KEYS.DISCIPLINE, [newIncident, ...incidents]);
 }
 
 export function saveGrade(grade: Partial<GradeRecord>) {
@@ -150,9 +113,16 @@ export function saveGrade(grade: Partial<GradeRecord>) {
   const existingIdx = grades.findIndex(g => 
     g.eleveId === grade.eleveId && g.matiereId === grade.matiereId && g.trimestre === grade.trimestre
   );
-  const newGrade = { ...grade, dateAjout: new Date().toISOString() } as GradeRecord;
+  
+  const newGrade = { 
+    ...grade, 
+    noteId: grade.noteId || `GRD-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+    dateAjout: new Date().toISOString() 
+  } as GradeRecord;
+
   if (existingIdx > -1) grades[existingIdx] = newGrade;
   else grades.push(newGrade);
+  
   saveToStorage(KEYS.GRADES, grades);
 }
 
@@ -165,6 +135,26 @@ export function addPayment(payment: Partial<PaymentRecord>) {
     anneeScolaire: '2025-2026'
   } as PaymentRecord;
   saveToStorage(KEYS.PAYMENTS, [newPayment, ...payments]);
+}
+
+export function addAbsence(absence: Partial<AbsenceRecord>) {
+  const absences = getFromStorage<AbsenceRecord>(KEYS.ABSENCES);
+  const newAbsence = {
+    ...absence,
+    absenceId: `ABS-${Date.now()}`,
+    date: absence.date || new Date().toISOString().split('T')[0]
+  } as AbsenceRecord;
+  saveToStorage(KEYS.ABSENCES, [...absences, newAbsence]);
+}
+
+export function addIncident(incident: Partial<DisciplineRecord>) {
+  const incidents = getFromStorage<DisciplineRecord>(KEYS.DISCIPLINE);
+  const newIncident = {
+    ...incident,
+    incidentId: `DIS-${Date.now()}`,
+    date: new Date().toISOString()
+  } as DisciplineRecord;
+  saveToStorage(KEYS.DISCIPLINE, [...incidents, newIncident]);
 }
 
 export function sendMessage(msg: { senderId: string, receiverId: string, content: string }) {

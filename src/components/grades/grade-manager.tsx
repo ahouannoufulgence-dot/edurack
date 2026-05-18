@@ -46,9 +46,9 @@ export function GradeManager({ user }: { user: User }) {
       
       if (existingGrade) {
         newScores[student.id] = {
-          interros: existingGrade.interros.map(n => n?.toString() || ""),
-          devoirs: existingGrade.devoirs.map(n => n?.toString() || ""),
-          composition: existingGrade.composition?.toString() || ""
+          interros: existingGrade.interros.map(n => n !== null ? n.toString() : ""),
+          devoirs: existingGrade.devoirs.map(n => n !== null ? n.toString() : ""),
+          composition: existingGrade.composition !== undefined && existingGrade.composition !== null ? existingGrade.composition.toString() : ""
         };
       } else {
         newScores[student.id] = { 
@@ -101,7 +101,7 @@ export function GradeManager({ user }: { user: User }) {
     
     toast({ 
       title: "Notes enregistrées", 
-      description: `${count} dossiers mis à jour avec coefficient ${currentCoeff}.` 
+      description: `${count} dossiers mis à jour pour ${selectedClass}.` 
     });
   };
 
@@ -112,7 +112,7 @@ export function GradeManager({ user }: { user: User }) {
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <FileEdit className="w-6 h-6 text-emerald-700" /> Saisie Pédagogique (3-3-1)
           </h2>
-          <p className="text-xs text-muted-foreground">Coeff. actuel pour cette classe : <span className="font-black text-emerald-700">{getCoefficient(selectedClass, selectedSubject)}</span></p>
+          <p className="text-xs text-muted-foreground">Coeff. standard : <span className="font-black text-emerald-700">{getCoefficient(selectedClass, selectedSubject)}</span></p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Select value={selectedTrimestre} onValueChange={(v: any) => setSelectedTrimestre(v)}>
@@ -231,7 +231,7 @@ export function GradeManager({ user }: { user: User }) {
                               </div>
                             </TooltipTrigger>
                             <TooltipContent>
-                              {moy > 0 ? "Notes saisies et validées" : "Saisie en attente"}
+                              {moy > 0 ? "Saisie validée" : "Saisie en attente"}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
