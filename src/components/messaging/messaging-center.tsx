@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { User, Role } from "@/lib/school-types";
-import { getFromStorage, sendMessage } from "@/lib/data-service";
+import { getFromStorage, sendMessage, markConversationAsRead } from "@/lib/data-service";
 import { MessageSquare, Send, Search, User as UserIcon } from "lucide-react";
 
 export function MessagingCenter({ currentUser }: { currentUser: User }) {
@@ -19,11 +19,24 @@ export function MessagingCenter({ currentUser }: { currentUser: User }) {
   const [newMessage, setNewMessage] = useState("");
   const [search, setSearch] = useState("");
 
+  const refreshMessages = useCallback(() => {
+    setMessages(getFromStorage<any>('edutrack_messages'));
+  }, []);
+
   useEffect(() => {
     const allUsers = getFromStorage<User>('edutrack_users');
     setUsers(allUsers.filter(u => u.id !== currentUser.id));
-    setMessages(getFromStorage<any>('edutrack_messages'));
-  }, [currentUser.id]);
+    refreshMessages();
+    
+    window.addEventListener('storage', refreshMessages);
+    return () => window.removeEventListener('storage', refreshMessages);
+  }, [currentUser.id, refreshMessages]);
+
+  useEffect(() => {
+    if (selectedUser) {
+      markConversationAsRead(currentUser.id, selectedUser.id);
+    }
+  }, [selectedUser, currentUser.id, messages]);
 
   const handleSend = () => {
     if (!selectedUser || !newMessage.trim()) return;
@@ -33,7 +46,7 @@ export function MessagingCenter({ currentUser }: { currentUser: User }) {
       content: newMessage
     });
     setNewMessage("");
-    setMessages(getFromStorage<any>('edutrack_messages'));
+    refreshMessages();
   };
 
   const currentChat = messages
@@ -61,21 +74,31 @@ export function MessagingCenter({ currentUser }: { currentUser: User }) {
         </CardHeader>
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-1">
-            {filteredUsers.map(u => (
-              <button
-                key={u.id}
-                onClick={() => setSelectedUser(u)}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${selectedUser?.id === u.id ? 'bg-emerald-50 text-emerald-900' : 'hover:bg-slate-50'}`}
-              >
-                <Avatar className="w-10 h-10">
-                  <AvatarFallback>{u.name[0]}</AvatarFallback>
-                </Avatar>
-                <div className="text-left overflow-hidden">
-                  <p className="font-bold text-sm truncate">{u.name}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase">{u.role}</p>
-                </div>
-              </button>
-            ))}
+            {filteredUsers.map(u => {
+              const unreadFromThisUser = messages.filter(m => m.receiverId === currentUser.id && m.senderId === u.id && !m.read).length;
+              return (
+                <button
+                  key={u.id}
+                  onClick={() => setSelectedUser(u)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all relative ${selectedUser?.id === u.id ? 'bg-emerald-50 text-emerald-900' : 'hover:bg-slate-50'}`}
+                >
+                  <Avatar className="w-10 h-10">
+                    <AvatarFallback>{u.name[0]}</AvatarFallback>
+                  </Avatar>
+                  <div className="text-left overflow-hidden flex-1">
+                    <div className="flex justify-between items-center">
+                      <p className="font-bold text-sm truncate">{u.name}</p>
+                      {unreadFromThisUser > 0 && (
+                        <span className="bg-emerald-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-black">
+                          {unreadFromThisUser}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground uppercase">{u.role}</p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </ScrollArea>
       </Card>

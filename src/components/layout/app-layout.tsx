@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -26,8 +27,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Role, User } from "@/lib/school-types";
 import { cn } from "@/lib/utils";
 import { useRouter } from 'next/navigation';
-import { createAuditLog } from '@/lib/audit';
 import { getCurrentUser, logout } from '@/lib/auth-service';
+import { getUnreadMessageCount } from '@/lib/data-service';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -41,7 +42,7 @@ const MENU_ITEMS = [
   { id: 'grades', label: 'Notes & Résultats', icon: FileText, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
   { id: 'students', label: 'Gestion Elèves', icon: UserRound, roles: ['Directeur', 'Enseignant'] },
   { id: 'inscriptions', label: 'Inscriptions', icon: UserPlus, roles: ['Directeur'] },
-  { id: 'absences', label: 'Absences & Discipline', icon: Clock, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
+  { id: 'absences', label: 'Vie Scolaire', icon: Clock, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
   { id: 'schedule', label: 'Emploi du temps', icon: Calendar, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
   { id: 'payments', label: 'Paiements', icon: CreditCard, roles: ['Directeur', 'Parent', 'Eleve'] },
   { id: 'messaging', label: 'Messagerie', icon: MessageSquare, roles: ['Directeur', 'Enseignant', 'Parent', 'Eleve'] },
@@ -53,6 +54,7 @@ const MENU_ITEMS = [
 
 export function AppLayout({ children, activeModule, setActiveModule, user }: AppLayoutProps) {
   const [scrolled, setScrolled] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const router = useRouter();
   const userRole = user?.role || 'Eleve';
 
@@ -61,11 +63,23 @@ export function AppLayout({ children, activeModule, setActiveModule, user }: App
     router.push('/login');
   }, [router]);
 
+  const updateNotifications = useCallback(() => {
+    if (user?.id) {
+      setUnreadCount(getUnreadMessageCount(user.id));
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    updateNotifications();
+    window.addEventListener('storage', updateNotifications);
+    return () => window.removeEventListener('storage', updateNotifications);
+  }, [updateNotifications]);
+
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     const resetTimer = () => {
       clearTimeout(timeout);
-      timeout = setTimeout(handleLogout, 15 * 60 * 1000); // 15 minutes d'inactivité
+      timeout = setTimeout(handleLogout, 30 * 60 * 1000); // 30 minutes d'inactivité
     };
 
     window.addEventListener('mousemove', resetTimer);
@@ -113,7 +127,14 @@ export function AppLayout({ children, activeModule, setActiveModule, user }: App
                         : "hover:bg-sidebar-accent/50 text-sidebar-foreground/80"
                     )}
                   >
-                    <item.icon className="w-4 h-4" />
+                    <div className="relative">
+                      <item.icon className="w-4 h-4" />
+                      {item.id === 'messaging' && unreadCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] w-3 h-3 flex items-center justify-center rounded-full border border-sidebar-accent font-bold">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-sm font-medium">{item.label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -154,9 +175,13 @@ export function AppLayout({ children, activeModule, setActiveModule, user }: App
                 <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-tighter">Connexion Protégée</span>
               </div>
 
-              <div className="relative">
-                <Bell className="w-5 h-5 text-muted-foreground cursor-pointer" />
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full border-2 border-white font-bold">3</span>
+              <div className="relative cursor-pointer" onClick={() => setActiveModule('messaging')}>
+                <Bell className="w-5 h-5 text-muted-foreground" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full border-2 border-white font-bold">
+                    {unreadCount}
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center gap-3 pl-2 border-l">
@@ -165,7 +190,6 @@ export function AppLayout({ children, activeModule, setActiveModule, user }: App
                   <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{user?.id}</p>
                 </div>
                 <Avatar className="w-9 h-9 border-2 border-primary/20">
-                  <AvatarImage src={user?.photoUrl || "https://picsum.photos/seed/admin/100/100"} />
                   <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
                 </Avatar>
               </div>

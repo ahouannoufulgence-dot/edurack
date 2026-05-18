@@ -33,11 +33,9 @@ export function saveToStorage<T>(key: string, data: T[]) {
  */
 export function getCoefficient(classLevel: string, subjectId: string): number {
   const coeffs = getFromStorage<CoefficientEntry>(KEYS.COEFFS);
-  // Recherche d'une valeur personnalisée par le Directeur pour cette classe précise
   const customEntry = coeffs.find(c => c.classLevel === classLevel && c.subjectId === subjectId);
   if (customEntry) return customEntry.value;
 
-  // Logique de coefficients par défaut (Bénin) si aucune personnalisation
   const isPremierCycle = ['6e', '5e', '4e', '3e'].some(c => classLevel.includes(c));
   const isSerieC = classLevel.includes(' C');
   const isSerieD = classLevel.includes(' D');
@@ -168,6 +166,26 @@ export function sendMessage(msg: { senderId: string, receiverId: string, content
   saveToStorage(KEYS.MESSAGES, [newMsg, ...messages]);
 }
 
+export function getUnreadMessageCount(userId: string): number {
+  const messages = getFromStorage<any>(KEYS.MESSAGES);
+  return messages.filter((m: any) => m.receiverId === userId && !m.read).length;
+}
+
+export function markConversationAsRead(userId: string, contactId: string) {
+  const messages = getFromStorage<any>(KEYS.MESSAGES);
+  let changed = false;
+  const updated = messages.map((m: any) => {
+    if (m.receiverId === userId && m.senderId === contactId && !m.read) {
+      changed = true;
+      return { ...m, read: true };
+    }
+    return m;
+  });
+  if (changed) {
+    saveToStorage(KEYS.MESSAGES, updated);
+  }
+}
+
 export function getGlobalStats() {
   const users = getFromStorage<User>(KEYS.USERS);
   const students = users.filter(u => u.role === 'Eleve');
@@ -175,7 +193,6 @@ export function getGlobalStats() {
   const payments = getFromStorage<PaymentRecord>(KEYS.PAYMENTS);
   const absences = getFromStorage<AbsenceRecord>(KEYS.ABSENCES);
 
-  // Calcul de la moyenne globale pondérée
   let totalPoints = 0;
   let totalCoeffs = 0;
   
