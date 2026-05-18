@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -13,14 +12,15 @@ import {
   Loader2, 
   CheckCircle2, 
   GraduationCap,
-  Activity,
+  Key,
   Lock,
   Copy,
   UserCog,
-  BookOpen
+  BookOpen,
+  ShieldCheck
 } from "lucide-react";
 import { useRouter } from 'next/navigation';
-import { ALL_CLASSES, SUBJECTS, Role } from '@/lib/school-types';
+import { verifyActivation, completeActivation } from '@/lib/activation';
 import { registerUser } from '@/lib/data-service';
 import { useToast } from '@/hooks/use-toast';
 import imagesData from '@/app/lib/placeholder-images.json';
@@ -30,31 +30,37 @@ export default function RegistrationPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [generatedId, setGeneratedId] = useState('');
+  const [activationToken, setActivationToken] = useState<any>(null);
+  
   const [formData, setFormData] = useState({
-    role: 'Eleve' as Role,
+    tokenId: '',
+    role: 'Eleve' as 'Eleve' | 'Enseignant' | 'Directeur',
     nom: '',
     prenom: '',
     sexe: 'M' as 'M' | 'F',
-    classeId: '3e 1',
-    subjectId: 'math',
     password: '',
     confirmPassword: '',
     secretQuestion: '',
-    secretAnswer: ''
+    secretAnswer: '',
+    subjectId: 'math'
   });
   
   const { toast } = useToast();
   const router = useRouter();
-
   const bgImage = imagesData.placeholderImages.find(img => img.id === 'login-bg');
 
-  const handleNextStep = (e: React.FormEvent) => {
+  const handleVerifyCode = (e: React.FormEvent) => {
     e.preventDefault();
-    if (step === 1) {
-      if (!formData.nom || !formData.prenom) {
-        toast({ variant: "destructive", title: "Erreur", description: "Veuillez remplir tous les champs d'identité." });
-        return;
+    if (formData.role === 'Eleve') {
+      const result = verifyActivation(formData.tokenId);
+      if (result.success) {
+        setActivationToken(result.token);
+        setStep(2);
+      } else {
+        toast({ variant: "destructive", title: "Erreur", description: result.message });
       }
+    } else {
+      // Pour les profs/directeurs, on passe directement à l'étape identité
       setStep(2);
     }
   };
@@ -68,26 +74,36 @@ export default function RegistrationPage() {
     
     setLoading(true);
     
-    // Délai simulé pour l'expérience utilisateur
     setTimeout(() => {
       try {
-        const resultId = registerUser({
-          role: formData.role,
-          nom: formData.nom,
-          prenom: formData.prenom,
-          sexe: formData.sexe,
-          classLevel: formData.role === 'Eleve' ? formData.classeId : undefined,
-          subjectId: formData.role === 'Enseignant' ? formData.subjectId : undefined,
-          password: formData.password,
-          secretQuestion: formData.secretQuestion,
-          secretAnswer: formData.secretAnswer
-        });
+        let finalId = '';
+        if (formData.role === 'Eleve') {
+          finalId = completeActivation(formData.tokenId, {
+            nom: formData.nom,
+            prenom: formData.prenom,
+            sexe: formData.sexe,
+            password: formData.password,
+            secretQuestion: formData.secretQuestion,
+            secretAnswer: formData.secretAnswer
+          });
+        } else {
+          finalId = registerUser({
+            role: formData.role,
+            nom: formData.nom,
+            prenom: formData.prenom,
+            sexe: formData.sexe,
+            subjectId: formData.role === 'Enseignant' ? formData.subjectId : undefined,
+            password: formData.password,
+            secretQuestion: formData.secretQuestion,
+            secretAnswer: formData.secretAnswer
+          });
+        }
         
-        setGeneratedId(resultId);
+        setGeneratedId(finalId);
         setStep(3);
-        toast({ title: "Inscription réussie", description: "Votre compte a été créé avec succès." });
+        toast({ title: "Activation réussie", description: "Votre compte est désormais opérationnel." });
       } catch (error) {
-        toast({ variant: "destructive", title: "Erreur technique", description: "Impossible de finaliser l'inscription." });
+        toast({ variant: "destructive", title: "Erreur", description: "Échec de la création du compte." });
       } finally {
         setLoading(false);
       }
@@ -96,253 +112,175 @@ export default function RegistrationPage() {
 
   const copyId = () => {
     navigator.clipboard.writeText(generatedId);
-    toast({ title: "Copié !", description: "Identifiant copié dans le presse-papier." });
-  };
-
-  const getRoleIcon = () => {
-    if (formData.role === 'Directeur') return <UserCog className="w-10 h-10 text-white" />;
-    if (formData.role === 'Enseignant') return <BookOpen className="w-10 h-10 text-white" />;
-    return <GraduationCap className="w-10 h-10 text-white" />;
+    toast({ title: "Copié !", description: "Identifiant copié." });
   };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-slate-900">
       <div className="absolute inset-0 z-0">
         {bgImage && (
-          <div className="relative w-full h-full overflow-hidden">
-            <Image
-              src={bgImage.imageUrl}
-              alt={bgImage.description}
-              fill
-              className="object-cover animate-zoom-slow"
-              priority
-            />
-            <div className="absolute inset-0 bg-black/40 z-10" />
+          <div className="relative w-full h-full">
+            <Image src={bgImage.imageUrl} alt="" fill className="object-cover opacity-40 animate-zoom-slow" priority />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
           </div>
         )}
       </div>
 
-      <Card className="w-full max-w-[550px] border-white/20 shadow-2xl bg-white/80 backdrop-blur-[16px] relative z-20 rounded-[2.5rem] overflow-hidden animate-in fade-in zoom-in duration-700">
-        <div className="h-2 bg-emerald-500 w-full" />
+      <Card className="w-full max-w-[500px] border-none shadow-2xl bg-white/95 backdrop-blur-xl rounded-[2.5rem] overflow-hidden relative z-10 animate-in fade-in zoom-in duration-500">
+        <div className="h-2 bg-emerald-600 w-full" />
         
         <CardHeader className="text-center pt-8">
-          <div className="mx-auto w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg mb-4 transition-transform hover:scale-110">
-            {getRoleIcon()}
+          <div className="mx-auto w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg mb-4">
+            {formData.role === 'Eleve' ? <GraduationCap className="w-8 h-8 text-white" /> : <ShieldCheck className="w-8 h-8 text-white" />}
           </div>
-          <CardTitle className="text-3xl font-black tracking-tight text-slate-800">
-            Inscription <span className="text-emerald-600">{formData.role}</span>
-          </CardTitle>
-          <CardDescription className="text-slate-500 font-medium">
-            Étape {step} sur 3 • Création de profil sécurisé
-          </CardDescription>
+          <CardTitle className="text-2xl font-black text-slate-800">Activation de Compte</CardTitle>
+          <CardDescription>Étape {step} sur 3 • Suivez les instructions</CardDescription>
         </CardHeader>
-        
+
         <CardContent className="px-8 pb-8">
           {step === 1 && (
-            <form onSubmit={handleNextStep} className="space-y-5">
-              <div className="space-y-2">
-                <Label className="text-slate-700 font-bold ml-1">Type de compte</Label>
-                <div className="grid grid-cols-3 gap-3">
+            <form onSubmit={handleVerifyCode} className="space-y-6">
+              <div className="space-y-3">
+                <Label className="font-bold">Je suis un...</Label>
+                <div className="grid grid-cols-3 gap-2">
                   {[
                     { id: 'Eleve', label: 'Élève', icon: GraduationCap },
-                    { id: 'Enseignant', label: 'Professeur', icon: BookOpen },
-                    { id: 'Directeur', label: 'Directeur', icon: UserCog }
+                    { id: 'Enseignant', label: 'Prof.', icon: BookOpen },
+                    { id: 'Directeur', label: 'Dir.', icon: UserCog }
                   ].map((r) => (
                     <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => setFormData({...formData, role: r.id as Role})}
+                      key={r.id} type="button"
+                      onClick={() => setFormData({...formData, role: r.id as any})}
                       className={cn(
-                        "flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all gap-1",
-                        formData.role === r.id 
-                          ? "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm" 
-                          : "bg-white/50 border-slate-100 text-slate-400 hover:border-emerald-200"
+                        "flex flex-col items-center p-3 rounded-2xl border-2 transition-all",
+                        formData.role === r.id ? "bg-emerald-50 border-emerald-500 text-emerald-700" : "bg-white border-slate-100 text-slate-400"
                       )}
                     >
-                      <r.icon className="w-5 h-5" />
-                      <span className="text-[10px] font-black uppercase tracking-tighter">{r.label}</span>
+                      <r.icon className="w-5 h-5 mb-1" />
+                      <span className="text-[10px] font-bold uppercase">{r.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {formData.role === 'Eleve' ? (
                 <div className="space-y-2">
-                  <Label className="text-slate-700 font-bold ml-1">Nom</Label>
-                  <Input 
-                    placeholder="ex: ADEBAYO" 
-                    className="h-12 bg-white/50 border-slate-200 rounded-xl uppercase"
-                    value={formData.nom} 
-                    onChange={e => setFormData({...formData, nom: e.target.value.toUpperCase()})}
-                    required 
-                  />
+                  <Label className="font-bold">Code d'activation (fourni par l'école)</Label>
+                  <div className="relative">
+                    <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Input 
+                      placeholder="EDP-2025-XXXX-XXX" 
+                      className="h-12 pl-12 uppercase font-mono"
+                      value={formData.tokenId} 
+                      onChange={e => setFormData({...formData, tokenId: e.target.value})}
+                      required 
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground italic">Exemple: EDP-2025-6E1-001</p>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-slate-700 font-bold ml-1">Prénom</Label>
-                  <Input 
-                    placeholder="ex: Koffi" 
-                    className="h-12 bg-white/50 border-slate-200 rounded-xl"
-                    value={formData.prenom} 
-                    onChange={e => setFormData({...formData, prenom: e.target.value})}
-                    required 
-                  />
+              ) : (
+                <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                  <p className="text-xs text-blue-700 font-medium leading-relaxed">
+                    Les personnels administratifs et enseignants peuvent s'inscrire directement. Leurs identifiants seront générés automatiquement.
+                  </p>
+                </div>
+              )}
+
+              <Button type="submit" className="w-full bg-emerald-600 h-12 rounded-xl font-bold shadow-lg gap-2">
+                Continuer <ArrowRight className="w-4 h-4" />
+              </Button>
+            </form>
+          )}
+
+          {step === 2 && (
+            <form onSubmit={handleFinalize} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="font-bold">Nom</Label>
+                  <Input value={formData.nom} onChange={e => setFormData({...formData, nom: e.target.value.toUpperCase()})} required className="uppercase" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="font-bold">Prénom</Label>
+                  <Input value={formData.prenom} onChange={e => setFormData({...formData, prenom: e.target.value})} required />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-slate-700 font-bold ml-1">Sexe</Label>
-                  <Select value={formData.sexe} onValueChange={(v: 'M'|'F') => setFormData({...formData, sexe: v})}>
-                    <SelectTrigger className="h-12 bg-white/50 border-slate-200 rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="font-bold">Sexe</Label>
+                  <Select value={formData.sexe} onValueChange={(v: any) => setFormData({...formData, sexe: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="M">Masculin</SelectItem>
                       <SelectItem value="F">Féminin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                
-                {formData.role === 'Eleve' && (
-                  <div className="space-y-2">
-                    <Label className="text-slate-700 font-bold ml-1">Classe</Label>
-                    <Select value={formData.classeId} onValueChange={(v) => setFormData({...formData, classeId: v})}>
-                      <SelectTrigger className="h-12 bg-white/50 border-slate-200 rounded-xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ALL_CLASSES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
                 {formData.role === 'Enseignant' && (
-                  <div className="space-y-2">
-                    <Label className="text-slate-700 font-bold ml-1">Matière</Label>
-                    <Select value={formData.subjectId} onValueChange={(v) => setFormData({...formData, subjectId: v})}>
-                      <SelectTrigger className="h-12 bg-white/50 border-slate-200 rounded-xl">
-                        <SelectValue />
-                      </SelectTrigger>
+                  <div className="space-y-1">
+                    <Label className="font-bold">Matière</Label>
+                    <Select value={formData.subjectId} onValueChange={v => setFormData({...formData, subjectId: v})}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {SUBJECTS.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                        <SelectItem value="math">Mathématiques</SelectItem>
+                        <SelectItem value="fr">Français</SelectItem>
+                        <SelectItem value="pc">Physique-Chimie</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 )}
               </div>
 
-              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 h-13 rounded-xl text-white font-bold shadow-lg gap-2">
-                Continuer <ArrowRight className="w-5 h-5" />
-              </Button>
-            </form>
-          )}
-
-          {step === 2 && (
-            <form onSubmit={handleFinalize} className="space-y-5">
-              <div className="text-center mb-6">
-                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Lock className="w-6 h-6 text-emerald-600" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="font-bold">Mot de passe</Label>
+                  <Input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
                 </div>
-                <h3 className="font-black text-xl text-slate-800">Sécurité du compte</h3>
-                <p className="text-sm text-slate-500 font-medium">Définissez vos identifiants de connexion.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-slate-700 font-bold ml-1">Mot de passe</Label>
-                  <Input 
-                    type="password" 
-                    placeholder="••••••••"
-                    className="h-12 bg-white/50 border-slate-200 rounded-xl"
-                    value={formData.password} 
-                    onChange={e => setFormData({...formData, password: e.target.value})}
-                    required 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-slate-700 font-bold ml-1">Confirmation</Label>
-                  <Input 
-                    type="password" 
-                    placeholder="••••••••"
-                    className="h-12 bg-white/50 border-slate-200 rounded-xl"
-                    value={formData.confirmPassword} 
-                    onChange={e => setFormData({...formData, confirmPassword: e.target.value})}
-                    required 
-                  />
+                <div className="space-y-1">
+                  <Label className="font-bold">Confirmation</Label>
+                  <Input type="password" value={formData.confirmPassword} onChange={e => setFormData({...formData, confirmPassword: e.target.value})} required />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-slate-700 font-bold ml-1">Question secrète</Label>
-                <Input 
-                  placeholder="Ex: Nom de votre premier école ?" 
-                  className="h-12 bg-white/50 border-slate-200 rounded-xl"
-                  value={formData.secretQuestion} 
-                  onChange={e => setFormData({...formData, secretQuestion: e.target.value})}
-                  required 
-                />
+              <div className="space-y-1">
+                <Label className="font-bold">Question secrète (Récupération)</Label>
+                <Input placeholder="Ex: Mon premier animal ?" value={formData.secretQuestion} onChange={e => setFormData({...formData, secretQuestion: e.target.value})} required />
+              </div>
+              <div className="space-y-1">
+                <Label className="font-bold">Réponse</Label>
+                <Input value={formData.secretAnswer} onChange={e => setFormData({...formData, secretAnswer: e.target.value})} required />
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-slate-700 font-bold ml-1">Réponse</Label>
-                <Input 
-                  placeholder="Votre réponse" 
-                  className="h-12 bg-white/50 border-slate-200 rounded-xl"
-                  value={formData.secretAnswer} 
-                  onChange={e => setFormData({...formData, secretAnswer: e.target.value})}
-                  required 
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <Button type="button" variant="outline" className="flex-1 h-13 rounded-xl font-bold" onClick={() => setStep(1)} disabled={loading}>
-                  Retour
-                </Button>
-                <Button type="submit" className="flex-[2] bg-emerald-600 hover:bg-emerald-700 h-13 rounded-xl text-white font-bold shadow-lg" disabled={loading}>
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Terminer l'inscription"}
+              <div className="flex gap-2 pt-2">
+                <Button type="button" variant="ghost" onClick={() => setStep(1)} className="flex-1">Retour</Button>
+                <Button type="submit" className="flex-[2] bg-emerald-600 font-bold" disabled={loading}>
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Créer mon compte"}
                 </Button>
               </div>
             </form>
           )}
 
           {step === 3 && (
-            <div className="text-center py-6 space-y-6 animate-in zoom-in duration-500">
-              <div className="relative mx-auto w-20 h-20">
-                <div className="absolute inset-0 bg-emerald-100 rounded-full animate-ping opacity-25" />
-                <div className="relative bg-emerald-600 w-20 h-20 rounded-full flex items-center justify-center shadow-xl">
-                  <CheckCircle2 className="w-10 h-10 text-white" />
-                </div>
+            <div className="text-center py-6 space-y-6">
+              <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-10 h-10 text-emerald-600" />
               </div>
-              
               <div>
-                <h2 className="text-2xl font-black text-slate-800">Inscription Terminée !</h2>
-                <p className="text-slate-500 font-medium mt-2">
-                  Voici votre identifiant unique généré par le système :
-                </p>
+                <h2 className="text-xl font-black text-slate-800">Bienvenue dans EduTrack Pro !</h2>
+                <p className="text-sm text-slate-500 mt-2">Votre identifiant de connexion est prêt :</p>
               </div>
-
-              <div className="bg-slate-100/80 p-6 rounded-3xl border-2 border-dashed border-emerald-200 group relative">
-                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Votre ID Officiel</p>
-                <p className="text-3xl font-mono font-black text-emerald-700 tracking-tighter">{generatedId}</p>
-                <Button size="icon" variant="ghost" className="absolute top-2 right-2 text-slate-400 hover:text-emerald-600" onClick={copyId}>
+              <div className="bg-slate-100 p-6 rounded-3xl border-2 border-dashed border-emerald-200 group relative">
+                <p className="text-3xl font-mono font-black text-emerald-700">{generatedId}</p>
+                <Button size="icon" variant="ghost" className="absolute top-2 right-2" onClick={copyId}>
                   <Copy className="w-4 h-4" />
                 </Button>
               </div>
-
-              <Button className="w-full bg-slate-900 hover:bg-black h-14 rounded-2xl text-white font-bold shadow-lg gap-2 text-lg" onClick={() => router.push('/login')}>
-                Se connecter <ArrowRight className="w-5 h-5" />
+              <Button className="w-full bg-slate-900 h-12 rounded-xl font-bold" onClick={() => router.push('/login')}>
+                Se connecter maintenant
               </Button>
             </div>
           )}
         </CardContent>
-        
-        <CardFooter className="bg-slate-50/80 border-t p-4 flex justify-center items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Activity className="w-3 h-3 text-emerald-600 animate-pulse" />
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Système d'Identité Dynamique v2</span>
-          </div>
-        </CardFooter>
       </Card>
     </div>
   );
