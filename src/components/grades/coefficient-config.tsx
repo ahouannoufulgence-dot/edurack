@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ALL_CLASSES, SUBJECTS, CoefficientEntry } from "@/lib/school-types";
 import { getFromStorage, saveToStorage, getCoefficient } from "@/lib/data-service";
-import { Save, RotateCcw, Settings2, ShieldCheck, Database, Info } from "lucide-react";
+import { Save, RotateCcw, Settings2, ShieldCheck, Database, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -37,13 +37,13 @@ export function CoefficientConfig() {
     });
   };
 
-  const handleReset = () => {
-    if (confirm("Voulez-vous restaurer les coefficients standards béninois pour cette classe ?")) {
+  const handleClearAll = () => {
+    if (confirm("Voulez-vous remettre TOUS les coefficients à zéro pour cette classe ?")) {
       const filtered = coeffs.filter(c => c.classLevel !== selectedClass);
       setCoeffs(filtered);
       saveToStorage(STORAGE_KEY, filtered);
       setHasUnsavedChanges(false);
-      toast({ title: "Réinitialisation réussie", description: "Valeurs par défaut restaurées." });
+      toast({ title: "Remise à zéro réussie", description: "Tous les coefficients de cette classe sont maintenant à 0." });
     }
   };
 
@@ -54,7 +54,7 @@ export function CoefficientConfig() {
     setHasUnsavedChanges(true);
     setCoeffs(prev => {
       const otherCoeffs = prev.filter(c => !(c.classLevel === selectedClass && c.subjectId === subjectId));
-      if (val === "") return otherCoeffs;
+      if (val === "" || num === 0) return otherCoeffs;
       return [...otherCoeffs, { classLevel: selectedClass, subjectId, value: num }];
     });
   };
@@ -65,13 +65,13 @@ export function CoefficientConfig() {
         <div>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
             <Settings2 className="w-6 h-6 md:w-8 md:h-8 text-emerald-700" />
-            Configuration
+            Configuration des Coefficients
           </h2>
-          <p className="text-xs md:text-sm text-muted-foreground">Ajustez la puissance des matières par classe.</p>
+          <p className="text-xs md:text-sm text-muted-foreground italic">Remis à zéro. Veuillez saisir les valeurs pour la classe <span className="font-bold">{selectedClass}</span>.</p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
-          <Button variant="outline" onClick={handleReset} className="flex-1 md:flex-none gap-2 rounded-xl h-11 text-xs">
-            <RotateCcw className="w-3 h-3" /> Restaurer
+          <Button variant="outline" onClick={handleClearAll} className="flex-1 md:flex-none gap-2 rounded-xl h-11 text-xs border-red-200 text-red-600 hover:bg-red-50">
+            <Trash2 className="w-3 h-3" /> Tout effacer
           </Button>
           <Button 
             onClick={handleSave} 
@@ -90,7 +90,7 @@ export function CoefficientConfig() {
         <div className="lg:col-span-1 space-y-4">
           <Card className="border-none shadow-md">
             <CardHeader className="p-4 md:p-6">
-              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Paramètres</CardTitle>
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Sélection</CardTitle>
             </CardHeader>
             <CardContent className="p-4 md:p-6 pt-0 md:pt-0 space-y-4">
               <div className="space-y-2">
@@ -105,12 +105,12 @@ export function CoefficientConfig() {
                 </Select>
               </div>
 
-              <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 hidden md:block">
-                <p className="text-[10px] text-blue-700 font-bold uppercase flex items-center gap-1 mb-1">
-                  <Database className="w-3 h-3" /> Persistance
+              <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100">
+                <p className="text-[10px] text-orange-700 font-bold uppercase flex items-center gap-1 mb-1">
+                  <Database className="w-3 h-3" /> Note importante
                 </p>
-                <p className="text-[10px] text-blue-800 leading-tight">
-                  Les modifications sont sauvegardées dans le stockage local de l'appareil.
+                <p className="text-[10px] text-orange-800 leading-tight">
+                  Par défaut, toutes les matières sont à coefficient 0. Saisissez les valeurs réelles pour permettre le calcul des moyennes générales.
                 </p>
               </div>
             </CardContent>
@@ -122,8 +122,8 @@ export function CoefficientConfig() {
             <div className="grid gap-3">
               {SUBJECTS.map((subject) => {
                 const customEntry = coeffs.find(c => c.classLevel === selectedClass && c.subjectId === subject.id);
-                const currentValue = customEntry ? customEntry.value : getCoefficient(selectedClass, subject.id);
-                const isCustom = !!customEntry;
+                const currentValue = customEntry ? customEntry.value : 0;
+                const isConfigured = !!customEntry;
                 
                 return (
                   <Card key={subject.id} className="border-none shadow-sm overflow-hidden">
@@ -131,9 +131,9 @@ export function CoefficientConfig() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                           <p className="font-bold text-slate-800 text-sm truncate">{subject.name}</p>
-                          {isCustom && (
+                          {isConfigured && (
                             <Badge className="bg-emerald-600 h-4 text-[8px] px-1.5 border-none">
-                              <ShieldCheck className="w-2 h-2 mr-1" /> DIR
+                              <ShieldCheck className="w-2 h-2 mr-1" /> OK
                             </Badge>
                           )}
                         </div>
@@ -144,11 +144,12 @@ export function CoefficientConfig() {
                         <Input 
                           type="number" 
                           inputMode="decimal"
-                          value={currentValue} 
+                          value={currentValue === 0 && !isConfigured ? "" : currentValue} 
+                          placeholder="0"
                           onChange={(e) => updateCoeff(subject.id, e.target.value)}
                           className={cn(
                             "w-16 text-center font-black h-12 rounded-xl text-lg",
-                            isCustom ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "bg-slate-50 border-none text-slate-700"
+                            isConfigured ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "bg-slate-50 border-none text-slate-400"
                           )}
                         />
                       </div>
@@ -166,14 +167,14 @@ export function CoefficientConfig() {
                       <TableHead className="pl-6 py-4">Matière</TableHead>
                       <TableHead>Catégorie</TableHead>
                       <TableHead className="w-40 text-center">Coefficient</TableHead>
-                      <TableHead className="text-right pr-6">Source</TableHead>
+                      <TableHead className="text-right pr-6">Statut</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {SUBJECTS.map((subject) => {
                       const customEntry = coeffs.find(c => c.classLevel === selectedClass && c.subjectId === subject.id);
-                      const currentValue = customEntry ? customEntry.value : getCoefficient(selectedClass, subject.id);
-                      const isCustom = !!customEntry;
+                      const currentValue = customEntry ? customEntry.value : 0;
+                      const isConfigured = !!customEntry;
                       
                       return (
                         <TableRow key={subject.id} className="hover:bg-slate-50/50 group transition-colors">
@@ -189,26 +190,27 @@ export function CoefficientConfig() {
                           <TableCell className="flex justify-center py-3">
                             <Input 
                               type="number" 
-                              value={currentValue} 
+                              value={currentValue === 0 && !isConfigured ? "" : currentValue} 
+                              placeholder="0"
                               onChange={(e) => updateCoeff(subject.id, e.target.value)}
                               className={cn(
                                 "w-24 text-center font-black h-10 rounded-xl transition-all",
-                                isCustom 
+                                isConfigured 
                                   ? "border-emerald-500 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-100" 
-                                  : "bg-white border-slate-200"
+                                  : "bg-white border-slate-200 text-slate-400"
                               )}
-                              min={1}
-                              max={10}
+                              min={0}
+                              max={20}
                             />
                           </TableCell>
                           <TableCell className="text-right pr-6">
-                            {isCustom ? (
+                            {isConfigured ? (
                               <Badge className="bg-emerald-600 border-none gap-1">
-                                <ShieldCheck className="w-3 h-3" /> Direction
+                                <ShieldCheck className="w-3 h-3" /> Configuré
                               </Badge>
                             ) : (
                               <Badge variant="secondary" className="bg-slate-100 text-slate-400 border-none">
-                                Standard
+                                À définir (0)
                               </Badge>
                             )}
                           </TableCell>

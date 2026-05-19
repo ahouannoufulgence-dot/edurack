@@ -49,7 +49,6 @@ export function setActiveYear(year: string) {
 export function closeAcademicYear(currentYear: string, nextYear: string) {
   if (typeof window === 'undefined') return;
 
-  // 1. Archiver les données actuelles
   const archive: ArchiveData = {
     year: currentYear,
     users: getFromStorage<User>(KEYS.USERS),
@@ -64,7 +63,6 @@ export function closeAcademicYear(currentYear: string, nextYear: string) {
   const archives = getFromStorage<ArchiveData>(KEYS.ARCHIVES);
   saveToStorage(KEYS.ARCHIVES, [...archives, archive]);
 
-  // 2. Promotion des élèves
   const users = getFromStorage<User>(KEYS.USERS);
   const updatedUsers = users.map(user => {
     if (user.role === 'Eleve' && user.classLevel !== 'Diplômé') {
@@ -79,14 +77,12 @@ export function closeAcademicYear(currentYear: string, nextYear: string) {
 
   saveToStorage(KEYS.USERS, updatedUsers);
 
-  // 3. Réinitialiser les données transactionnelles pour la nouvelle année
   saveToStorage(KEYS.GRADES, []);
   saveToStorage(KEYS.ABSENCES, []);
   saveToStorage(KEYS.DISCIPLINE, []);
   saveToStorage(KEYS.PAYMENTS, []);
   saveToStorage(KEYS.SCHEDULE, []);
   
-  // 4. Mettre à jour l'année active
   setActiveYear(nextYear);
 
   createAuditLog(
@@ -100,31 +96,16 @@ export function closeAcademicYear(currentYear: string, nextYear: string) {
   );
 }
 
+/**
+ * Récupère le coefficient d'une matière. 
+ * Par défaut, retourne 0 comme demandé. Le Directeur doit les configurer.
+ */
 export function getCoefficient(classLevel: string, subjectId: string): number {
   const coeffs = getFromStorage<CoefficientEntry>(KEYS.COEFFS);
   const customEntry = coeffs.find(c => c.classLevel === classLevel && c.subjectId === subjectId);
-  if (customEntry) return customEntry.value;
-
-  const isPremierCycle = ['6e', '5e', '4e', '3e'].some(c => classLevel.includes(c));
-  const isSerieC = classLevel.includes(' C');
-  const isSerieD = classLevel.includes(' D');
-  const isSerieA = classLevel.includes(' A') || classLevel.includes(' B');
-
-  const defaultCoeffs: Record<string, number> = {
-    'math': isSerieC ? 6 : (isSerieD || isPremierCycle ? 4 : 2),
-    'pc': isSerieC ? 5 : (isSerieD ? 4 : (isPremierCycle ? 2 : 1)),
-    'svt': isSerieD ? 5 : (isPremierCycle || isSerieC ? 2 : 1),
-    'fr': isSerieA ? 5 : 4,
-    'philo': isSerieA ? 4 : 2,
-    'ang': isSerieA ? 4 : 3,
-    'hg': isSerieA ? 3 : 2,
-    'eps': 1,
-    'allemand': 2,
-    'espagnol': 2,
-    'ct': 1
-  };
-
-  return defaultCoeffs[subjectId] || 1;
+  
+  // Retourne la valeur personnalisée ou 0 par défaut
+  return customEntry ? customEntry.value : 0;
 }
 
 export function registerUser(data: {
