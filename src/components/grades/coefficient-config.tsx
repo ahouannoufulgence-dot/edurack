@@ -12,6 +12,7 @@ import { getFromStorage, saveToStorage, getCoefficient } from "@/lib/data-servic
 import { Save, RotateCcw, Settings2, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = 'edutrack_coeffs';
 
@@ -110,8 +111,10 @@ export function CoefficientConfig() {
               </TableHeader>
               <TableBody>
                 {SUBJECTS.map((subject) => {
-                  const currentValue = getCoefficient(selectedClass, subject.id);
-                  const isCustom = coeffs.some(c => c.classLevel === selectedClass && c.subjectId === subject.id);
+                  // Chercher dans l'état local d'abord, sinon utiliser le calcul par défaut
+                  const customEntry = coeffs.find(c => c.classLevel === selectedClass && c.subjectId === subject.id);
+                  const currentValue = customEntry ? customEntry.value : getCoefficient(selectedClass, subject.id);
+                  const isCustom = !!customEntry;
                   
                   return (
                     <TableRow key={subject.id} className="hover:bg-slate-50/50">
