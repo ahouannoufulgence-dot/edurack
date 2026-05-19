@@ -41,7 +41,7 @@ export function ScheduleManager({ user }: { user: User }) {
 
   const handleAddSlot = () => {
     if (!newSlot.matiereId || !newSlot.heureDebut || !newSlot.heureFin || !newSlot.jour) {
-      toast({ variant: "destructive", title: "Erreur", description: "Veuillez remplir tous les champs." });
+      toast({ variant: "destructive", title: "Erreur", description: "Champs manquants." });
       return;
     }
     
@@ -49,7 +49,7 @@ export function ScheduleManager({ user }: { user: User }) {
     const endHour = parseInt(newSlot.heureFin.split(':')[0]);
 
     if (endHour <= startHour) {
-      toast({ variant: "destructive", title: "Erreur", description: "L'heure de fin doit être après l'heure de début." });
+      toast({ variant: "destructive", title: "Erreur", description: "Heure de fin invalide." });
       return;
     }
 
@@ -60,7 +60,7 @@ export function ScheduleManager({ user }: { user: User }) {
       heureDebut: newSlot.heureDebut!,
       heureFin: newSlot.heureFin!,
       matiereId: newSlot.matiereId!,
-      enseignantId: user.role === 'Enseignant' ? user.id : (SUBJECTS.find(s => s.id === newSlot.matiereId)?.enseignantId || ""),
+      enseignantId: user.role === 'Enseignant' ? user.id : "",
       salle: newSlot.salle || "N/A"
     };
 
@@ -68,7 +68,7 @@ export function ScheduleManager({ user }: { user: User }) {
     setSchedules(updated);
     saveToStorage('edutrack_schedule', updated);
     setIsAdding(false);
-    toast({ title: "Cours ajouté", description: "L'emploi du temps a été mis à jour." });
+    toast({ title: "Cours ajouté" });
   };
 
   const removeSlot = (id: string) => {
@@ -86,156 +86,119 @@ export function ScheduleManager({ user }: { user: User }) {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-emerald-700" /> Emploi du Temps
+          <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <Calendar className="w-5 h-5 md:w-6 md:h-6 text-emerald-700" /> Emploi du Temps
           </h2>
-          <p className="text-sm text-muted-foreground">Classe : <span className="font-bold text-emerald-700">{selectedClass}</span></p>
+          <p className="text-xs md:text-sm text-muted-foreground font-medium">Classe : <span className="text-emerald-700 font-bold">{selectedClass}</span></p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
           <Select value={selectedClass} onValueChange={setSelectedClass}>
-            <SelectTrigger className="w-full md:w-48 bg-white h-11 rounded-xl shadow-sm">
-              <SelectValue placeholder="Choisir une classe" />
-            </SelectTrigger>
+            <SelectTrigger className="w-full md:w-44 bg-white h-10 rounded-xl shadow-sm text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               {ALL_CLASSES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
           {canEdit && (
-            <Button onClick={() => setIsAdding(!isAdding)} className="bg-emerald-700 hover:bg-emerald-800 gap-2 h-11 rounded-xl px-6 shadow-md transition-all active:scale-95">
-              <Plus className="w-4 h-4" /> {isAdding ? "Fermer" : "Nouveau cours"}
+            <Button onClick={() => setIsAdding(!isAdding)} className="bg-emerald-700 hover:bg-emerald-800 gap-2 h-10 rounded-xl px-4 text-xs shadow-md">
+              <Plus className="w-4 h-4" /> {isAdding ? "Fermer" : "Ajouter"}
             </Button>
           )}
         </div>
       </div>
 
       {isAdding && canEdit && (
-        <Card className="border-emerald-200 bg-white shadow-xl animate-in slide-in-from-top duration-300 border-2">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-500">Matière</label>
+        <Card className="border-emerald-200 bg-white shadow-lg animate-in slide-in-from-top duration-300">
+          <CardContent className="p-4 md:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-500">Matière</label>
                 <Select value={newSlot.matiereId} onValueChange={v => setNewSlot({...newSlot, matiereId: v})}>
-                  <SelectTrigger className="bg-slate-50 border-none h-12 rounded-xl">
-                    <SelectValue placeholder="Matière" />
-                  </SelectTrigger>
+                  <SelectTrigger className="bg-slate-50 h-10 rounded-xl text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {availableSubjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-500">Jour</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-500">Jour</label>
                 <Select value={newSlot.jour} onValueChange={v => setNewSlot({...newSlot, jour: v})}>
-                  <SelectTrigger className="bg-slate-50 border-none h-12 rounded-xl">
-                    <SelectValue placeholder="Jour" />
-                  </SelectTrigger>
+                  <SelectTrigger className="bg-slate-50 h-10 rounded-xl text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>{DAYS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-500">Début</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-500">Début</label>
                 <Select value={newSlot.heureDebut} onValueChange={v => setNewSlot({...newSlot, heureDebut: v})}>
-                  <SelectTrigger className="bg-slate-50 border-none h-12 rounded-xl">
-                    <SelectValue placeholder="Début" />
-                  </SelectTrigger>
+                  <SelectTrigger className="bg-slate-50 h-10 rounded-xl text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>{START_HOURS.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-500">Fin</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-500">Fin</label>
                 <Select value={newSlot.heureFin} onValueChange={v => setNewSlot({...newSlot, heureFin: v})}>
-                  <SelectTrigger className="bg-slate-50 border-none h-12 rounded-xl">
-                    <SelectValue placeholder="Fin" />
-                  </SelectTrigger>
+                  <SelectTrigger className="bg-slate-50 h-10 rounded-xl text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>{END_HOURS.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-500">Salle</label>
-                <Input 
-                  value={newSlot.salle} 
-                  onChange={e => setNewSlot({...newSlot, salle: e.target.value})} 
-                  className="bg-slate-50 border-none h-12 rounded-xl" 
-                  placeholder="Ex: Salle 01" 
-                />
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-500">Salle</label>
+                <Input value={newSlot.salle} onChange={e => setNewSlot({...newSlot, salle: e.target.value})} className="bg-slate-50 h-10 rounded-xl text-xs" />
               </div>
             </div>
-            <div className="mt-6 flex justify-end">
-              <Button onClick={handleAddSlot} className="bg-emerald-700 h-12 px-10 font-bold rounded-xl shadow-lg">
-                Enregistrer le cours
-              </Button>
+            <div className="mt-4 flex justify-end">
+              <Button onClick={handleAddSlot} className="w-full sm:w-auto bg-emerald-700 h-10 px-8 text-xs font-bold rounded-xl shadow-lg">Enregistrer</Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <Card className="border-none shadow-xl overflow-hidden bg-white/50 backdrop-blur-sm">
-        <CardContent className="p-0 overflow-x-auto">
-          <div className="min-w-[900px]">
-            <div className="grid grid-cols-7 bg-slate-100/80 border-b">
-              <div className="p-4 border-r font-black text-[10px] text-center text-slate-500 uppercase tracking-widest">Horaire</div>
-              {DAYS.map(day => (
-                <div key={day} className="p-4 border-r font-black text-xs text-center text-emerald-900 uppercase tracking-wider">{day}</div>
+      <Card className="border-none shadow-xl overflow-hidden bg-white/50">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <div className="min-w-[700px] md:min-w-[900px]">
+              <div className="grid grid-cols-7 bg-slate-100/80 border-b">
+                <div className="p-3 border-r font-black text-[9px] text-center text-slate-500 uppercase tracking-widest">Heure</div>
+                {DAYS.map(day => (
+                  <div key={day} className="p-3 border-r font-black text-[10px] text-center text-emerald-900 uppercase tracking-wider">{day}</div>
+                ))}
+              </div>
+
+              {START_HOURS.map(hour => (
+                <div key={hour} className="grid grid-cols-7 border-b min-h-[80px] md:min-h-[100px]">
+                  <div className="p-2 border-r bg-slate-50/50 flex items-center justify-center">
+                    <span className="text-[9px] font-mono font-black text-slate-500">{hour}</span>
+                  </div>
+                  {DAYS.map(day => {
+                    const slot = getSlotAt(day, hour);
+                    const subject = SUBJECTS.find(s => s.id === slot?.matiereId);
+                    
+                    return (
+                      <div key={`${day}-${hour}`} className={cn("p-2 border-r relative transition-all flex flex-col items-center justify-center text-center", slot ? "bg-emerald-50/60" : "hover:bg-slate-50/30")}>
+                        {slot ? (
+                          <div className="w-full animate-in zoom-in duration-300">
+                            <p className="text-[9px] font-black text-emerald-950 uppercase leading-tight mb-1">{subject?.name}</p>
+                            <p className="text-[8px] font-mono text-emerald-600 mb-1">{slot.heureDebut}-{slot.heureFin}</p>
+                            <div className="flex items-center justify-center gap-1 text-[8px] text-emerald-700 font-bold bg-white/50 py-0.5 px-1.5 rounded-full">
+                              <MapPin className="w-2 h-2" /> {slot.salle}
+                            </div>
+                            {canEdit && (
+                              <button onClick={() => removeSlot(slot.edtId)} className="absolute top-1 right-1 p-1 text-red-500/50 hover:text-red-500 transition-colors">
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="opacity-0 group-hover:opacity-100"><Clock className="w-3 h-3 text-slate-200" /></div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               ))}
             </div>
-
-            {START_HOURS.map(hour => (
-              <div key={hour} className="grid grid-cols-7 border-b group min-h-[95px]">
-                <div className="p-4 border-r bg-slate-50/50 flex flex-col items-center justify-center">
-                  <span className="text-xs font-mono font-black text-slate-600">{hour}</span>
-                </div>
-                {DAYS.map(day => {
-                  const slot = getSlotAt(day, hour);
-                  const subject = SUBJECTS.find(s => s.id === slot?.matiereId);
-                  
-                  return (
-                    <div 
-                      key={`${day}-${hour}`} 
-                      className={cn(
-                        "p-3 border-r relative group/slot transition-all flex flex-col items-center justify-center text-center",
-                        slot ? "bg-emerald-50/80" : ""
-                      )}
-                    >
-                      {slot ? (
-                        <div className="w-full animate-in zoom-in duration-300">
-                          <p className="text-[10px] font-black text-emerald-950 leading-tight uppercase mb-1">
-                            {subject?.name}
-                          </p>
-                          <p className="text-[9px] font-mono text-emerald-600 mb-1">
-                            {slot.heureDebut} - {slot.heureFin}
-                          </p>
-                          <div className="flex items-center justify-center gap-1.5 text-[9px] text-emerald-700 font-bold bg-white/60 py-1 px-2 rounded-full inline-flex">
-                            <MapPin className="w-2.5 h-2.5" /> {slot.salle}
-                          </div>
-                          {canEdit && (
-                            <button 
-                              onClick={() => removeSlot(slot.edtId)}
-                              className="absolute top-1 right-1 opacity-0 group-hover/slot:opacity-100 p-1.5 text-red-500 hover:bg-red-50 rounded-full transition-all"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="opacity-0 group-hover/slot:opacity-50">
-                           <Clock className="w-4 h-4 text-slate-300" />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
           </div>
         </CardContent>
       </Card>
-
-      <div className="flex items-center gap-2 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-        <AlertCircle className="w-4 h-4 text-emerald-600" />
-        <span className="text-xs font-medium text-emerald-800 tracking-tight">
-          Note : Les cours programmés sont enregistrés instantanément et visibles par tous les élèves de la classe sélectionnée.
-        </span>
-      </div>
     </div>
   );
 }
