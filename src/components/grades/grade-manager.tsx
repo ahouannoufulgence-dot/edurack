@@ -18,7 +18,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 type ScoreState = {
   interros: string[];
   devoirs: string[];
-  composition: string;
 };
 
 export function GradeManager({ user }: { user: User }) {
@@ -48,25 +47,20 @@ export function GradeManager({ user }: { user: User }) {
         newScores[student.id] = {
           interros: existingGrade.interros.map(n => n !== null ? n.toString() : ""),
           devoirs: existingGrade.devoirs.map(n => n !== null ? n.toString() : ""),
-          composition: existingGrade.composition !== undefined && existingGrade.composition !== null ? existingGrade.composition.toString() : ""
         };
       } else {
         newScores[student.id] = { 
           interros: ["", "", ""], 
           devoirs: ["", "", ""], 
-          composition: "" 
         };
       }
     });
     setScores(newScores);
   }, [selectedClass, selectedSubject, selectedTrimestre]);
 
-  const handleScoreChange = (id: string, group: 'interros' | 'devoirs' | 'composition', index: number, val: string) => {
+  const handleScoreChange = (id: string, group: 'interros' | 'devoirs', index: number, val: string) => {
     setScores(prev => {
-      const current = prev[id] || { interros: ["", "", ""], devoirs: ["", "", ""], composition: "" };
-      if (group === 'composition') {
-        return { ...prev, [id]: { ...current, composition: val } };
-      }
+      const current = prev[id] || { interros: ["", "", ""], devoirs: ["", "", ""] };
       const newArray = [...current[group]];
       newArray[index] = val;
       return { ...prev, [id]: { ...current, [group]: newArray } };
@@ -80,9 +74,8 @@ export function GradeManager({ user }: { user: User }) {
     Object.entries(scores).forEach(([studentId, s]) => {
       const interros = s.interros.map(v => v === "" ? null : parseFloat(v));
       const devoirs = s.devoirs.map(v => v === "" ? null : parseFloat(v));
-      const comp = s.composition === "" ? null : parseFloat(s.composition);
       
-      const moy = calculateMoyenneComplex(interros, devoirs, comp);
+      const moy = calculateMoyenneComplex(interros, devoirs, null);
       
       saveGrade({
         eleveId: studentId,
@@ -92,7 +85,7 @@ export function GradeManager({ user }: { user: User }) {
         trimestre: selectedTrimestre,
         interros,
         devoirs,
-        composition: comp,
+        composition: null,
         moyenne: moy,
         coefficient: currentCoeff
       });
@@ -150,7 +143,6 @@ export function GradeManager({ user }: { user: User }) {
                   <TableHead className="pl-4 md:pl-6 py-4 sticky left-0 bg-slate-50 z-20 w-40 md:w-56 text-xs md:text-sm">Élève</TableHead>
                   <TableHead className="text-center bg-blue-50/30 text-[10px] md:text-xs uppercase font-black">Interros</TableHead>
                   <TableHead className="text-center bg-orange-50/30 text-[10px] md:text-xs uppercase font-black">Devoirs</TableHead>
-                  <TableHead className="w-16 md:w-24 text-center text-[10px] md:text-xs uppercase font-black">Comp.</TableHead>
                   <TableHead className="w-16 md:w-24 text-center font-black text-[10px] md:text-xs uppercase">Moy.</TableHead>
                   <TableHead className="text-right pr-4 md:pr-6 text-[10px] md:text-xs uppercase font-black">État</TableHead>
                 </TableRow>
@@ -158,17 +150,16 @@ export function GradeManager({ user }: { user: User }) {
               <TableBody>
                 {students.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic text-xs md:text-sm">
+                    <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic text-xs md:text-sm">
                       Sélectionnez une classe pour commencer.
                     </TableCell>
                   </TableRow>
                 ) : (
                   students.map((student) => {
-                    const s = scores[student.id] || { interros: ["", "", ""], devoirs: ["", "", ""], composition: "" };
+                    const s = scores[student.id] || { interros: ["", "", ""], devoirs: ["", "", ""] };
                     const interros = s.interros.map(v => v === "" ? null : parseFloat(v));
                     const devoirs = s.devoirs.map(v => v === "" ? null : parseFloat(v));
-                    const comp = s.composition === "" ? null : parseFloat(s.composition);
-                    const moy = calculateMoyenneComplex(interros, devoirs, comp);
+                    const moy = calculateMoyenneComplex(interros, devoirs, null);
 
                     return (
                       <TableRow key={student.id} className="hover:bg-emerald-50/30 transition-colors group">
@@ -205,16 +196,6 @@ export function GradeManager({ user }: { user: User }) {
                               />
                             ))}
                           </div>
-                        </TableCell>
-
-                        <TableCell>
-                          <Input 
-                            type="number" min={0} max={20} step={0.25}
-                            value={s.composition} 
-                            onChange={e => handleScoreChange(student.id, 'composition', 0, e.target.value)}
-                            className="w-14 md:w-16 h-8 text-center font-bold text-xs"
-                            placeholder="C"
-                          />
                         </TableCell>
 
                         <TableCell className="text-center">
