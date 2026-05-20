@@ -47,10 +47,7 @@ export function GradeManager({ user }: { user: User }) {
           devoirs: existingGrade.devoirs.map(n => n !== null ? n.toString() : ""),
         };
       } else {
-        newScores[student.id] = { 
-          interros: ["", "", ""], 
-          devoirs: ["", "", ""], 
-        };
+        newScores[student.id] = { interros: ["", "", ""], devoirs: ["", "", ""] };
       }
     });
     setScores(newScores);
@@ -72,8 +69,7 @@ export function GradeManager({ user }: { user: User }) {
     Object.entries(scores).forEach(([studentId, s]) => {
       const interros = s.interros.map(v => v === "" ? null : parseFloat(v));
       const devoirs = s.devoirs.map(v => v === "" ? null : parseFloat(v));
-      
-      const moy = calculateMoyenneComplex(interros, devoirs, null);
+      const moy = calculateMoyenneComplex(interros, devoirs);
       
       saveGrade({
         eleveId: studentId,
@@ -83,17 +79,13 @@ export function GradeManager({ user }: { user: User }) {
         trimestre: selectedTrimestre,
         interros,
         devoirs,
-        composition: null,
         moyenne: moy,
         coefficient: currentCoeff
       });
       count++;
     });
     
-    toast({ 
-      title: "Notes enregistrées", 
-      description: `${count} dossiers mis à jour.` 
-    });
+    toast({ title: "Notes enregistrées", description: `${count} dossiers mis à jour.` });
   };
 
   return (
@@ -101,34 +93,32 @@ export function GradeManager({ user }: { user: User }) {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
-            <FileEdit className="w-5 h-5 md:w-6 md:h-6 text-emerald-700" /> Saisie des Notes
+            <FileEdit className="w-5 h-5 text-emerald-700" /> Saisie des Notes
           </h2>
           <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider font-bold">
             Coeff. actuel : <span className="text-emerald-700">{getCoefficient(selectedClass, selectedSubject)}</span>
           </p>
         </div>
         <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 w-full lg:w-auto">
-            <Select value={selectedTrimestre} onValueChange={(v: any) => setSelectedTrimestre(v)}>
-              <SelectTrigger className="bg-white text-xs h-10 md:h-11"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="T1">1er Trim.</SelectItem>
-                <SelectItem value="T2">2ème Trim.</SelectItem>
-                <SelectItem value="T3">3ème Trim.</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={selectedClass} onValueChange={setSelectedClass}>
-              <SelectTrigger className="bg-white text-xs h-10 md:h-11"><SelectValue /></SelectTrigger>
-              <SelectContent>{ALL_CLASSES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-            </Select>
-            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-              <SelectTrigger className="bg-white text-xs h-10 md:h-11"><SelectValue /></SelectTrigger>
-              <SelectContent>{SUBJECTS.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
-            </Select>
-            <Button onClick={handleSaveAll} className="bg-emerald-700 hover:bg-emerald-800 gap-2 h-10 md:h-11 text-xs shadow-md col-span-2 md:col-span-1 font-bold">
-              <Save className="w-4 h-4" /> Sauvegarder
-            </Button>
-          </div>
+          <Select value={selectedTrimestre} onValueChange={(v: any) => setSelectedTrimestre(v)}>
+            <SelectTrigger className="bg-white h-11 w-32"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="T1">1er Trim.</SelectItem>
+              <SelectItem value="T2">2ème Trim.</SelectItem>
+              <SelectItem value="T3">3ème Trim.</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={selectedClass} onValueChange={setSelectedClass}>
+            <SelectTrigger className="bg-white h-11 w-32"><SelectValue /></SelectTrigger>
+            <SelectContent>{ALL_CLASSES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+            <SelectTrigger className="bg-white h-11 w-44"><SelectValue /></SelectTrigger>
+            <SelectContent>{SUBJECTS.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+          </Select>
+          <Button onClick={handleSaveAll} className="bg-emerald-700 hover:bg-emerald-800 h-11 px-8 rounded-xl font-bold shadow-md">
+            <Save className="w-4 h-4 mr-2" /> Enregistrer
+          </Button>
         </div>
       </div>
 
@@ -138,83 +128,63 @@ export function GradeManager({ user }: { user: User }) {
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow>
-                  <TableHead className="pl-4 md:pl-6 py-4 sticky left-0 bg-slate-50 z-20 w-40 md:w-56 text-xs md:text-sm">Élève</TableHead>
-                  <TableHead className="text-center bg-blue-50/30 text-[10px] md:text-xs uppercase font-black">Interrogations</TableHead>
-                  <TableHead className="text-center bg-orange-50/30 text-[10px] md:text-xs uppercase font-black">Devoirs</TableHead>
-                  <TableHead className="w-16 md:w-24 text-center font-black text-[10px] md:text-xs uppercase">Moy.</TableHead>
-                  <TableHead className="text-right pr-4 md:pr-6 text-[10px] md:text-xs uppercase font-black">État</TableHead>
+                  <TableHead className="pl-6 py-4 w-64">Élève</TableHead>
+                  <TableHead className="text-center">Interrogations</TableHead>
+                  <TableHead className="text-center">Devoirs</TableHead>
+                  <TableHead className="w-24 text-center font-black">Moy.</TableHead>
+                  <TableHead className="text-right pr-6">État</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {students.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic text-xs md:text-sm">
-                      Aucun élève trouvé dans cette classe.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  students.map((student) => {
-                    const s = scores[student.id] || { interros: ["", "", ""], devoirs: ["", "", ""] };
-                    const interros = s.interros.map(v => v === "" ? null : parseFloat(v));
-                    const devoirs = s.devoirs.map(v => v === "" ? null : parseFloat(v));
-                    const moy = calculateMoyenneComplex(interros, devoirs, null);
+                {students.map((student) => {
+                  const s = scores[student.id] || { interros: ["", "", ""], devoirs: ["", "", ""] };
+                  const interros = s.interros.map(v => v === "" ? null : parseFloat(v));
+                  const devoirs = s.devoirs.map(v => v === "" ? null : parseFloat(v));
+                  const moy = calculateMoyenneComplex(interros, devoirs);
 
-                    return (
-                      <TableRow key={student.id} className="hover:bg-emerald-50/30 transition-colors group">
-                        <TableCell className="pl-4 md:pl-6 py-3 sticky left-0 bg-white group-hover:bg-emerald-50 transition-colors z-10 border-r">
-                          <p className="font-bold text-slate-800 truncate text-xs md:text-sm uppercase">{student.name}</p>
-                          <p className="text-[8px] md:text-[9px] font-mono text-muted-foreground">{student.id}</p>
-                        </TableCell>
-                        
-                        <TableCell className="bg-blue-50/10 min-w-[120px]">
-                          <div className="flex gap-1 justify-center">
-                            {[0, 1, 2].map(idx => (
-                              <Input 
-                                key={idx}
-                                type="number" min={0} max={20} step={0.25}
-                                value={s.interros[idx]} 
-                                onChange={e => handleScoreChange(student.id, 'interros', idx, e.target.value)}
-                                className="w-10 md:w-12 h-8 text-center text-[10px] md:text-xs p-1"
-                                placeholder={`I${idx+1}`}
-                              />
-                            ))}
-                          </div>
-                        </TableCell>
-
-                        <TableCell className="bg-orange-50/10 min-w-[120px]">
-                          <div className="flex gap-1 justify-center">
-                            {[0, 1, 2].map(idx => (
-                              <Input 
-                                key={idx}
-                                type="number" min={0} max={20} step={0.25}
-                                value={s.devoirs[idx]} 
-                                onChange={e => handleScoreChange(student.id, 'devoirs', idx, e.target.value)}
-                                className="w-10 md:w-12 h-8 text-center text-[10px] md:text-xs p-1"
-                                placeholder={`D${idx+1}`}
-                              />
-                            ))}
-                          </div>
-                        </TableCell>
-
-                        <TableCell className="text-center">
-                          <span className={`font-black text-xs md:text-sm ${moy >= 10 ? 'text-emerald-700' : 'text-red-600'}`}>
-                            {moy > 0 ? moy.toFixed(2) : '--'}
-                          </span>
-                        </TableCell>
-
-                        <TableCell className="text-right pr-4 md:pr-6">
-                          <div className="flex justify-end">
-                            {moy > 0 ? (
-                              <CheckCircle className="w-4 h-4 text-emerald-500" />
-                            ) : (
-                              <Info className="w-4 h-4 text-slate-300" />
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
+                  return (
+                    <TableRow key={student.id} className="hover:bg-emerald-50/30">
+                      <TableCell className="pl-6 py-3">
+                        <p className="font-bold text-slate-800 uppercase">{student.name}</p>
+                        <p className="text-[10px] font-mono text-muted-foreground">{student.id}</p>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 justify-center">
+                          {[0, 1, 2].map(idx => (
+                            <Input 
+                              key={idx} type="number" 
+                              value={s.interros[idx]} 
+                              onChange={e => handleScoreChange(student.id, 'interros', idx, e.target.value)}
+                              className="w-12 h-9 text-center p-1"
+                              placeholder={`I${idx+1}`}
+                            />
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 justify-center">
+                          {[0, 1, 2].map(idx => (
+                            <Input 
+                              key={idx} type="number" 
+                              value={s.devoirs[idx]} 
+                              onChange={e => handleScoreChange(student.id, 'devoirs', idx, e.target.value)}
+                              className="w-12 h-9 text-center p-1"
+                              placeholder={`D${idx+1}`}
+                            />
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className={`font-black ${moy >= 10 ? 'text-emerald-700' : 'text-red-600'}`}>
+                          {moy > 0 ? moy.toFixed(2) : '--'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right pr-6">
+                        {moy > 0 ? <CheckCircle className="w-4 h-4 text-emerald-500 inline" /> : <Info className="w-4 h-4 text-slate-300 inline" />}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

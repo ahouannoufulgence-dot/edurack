@@ -39,7 +39,6 @@ export function TokenGenerator() {
       return;
     }
 
-    // Génération du contenu HTML pour Word
     const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head><meta charset='utf-8'><title>Export Word EduTrack</title>
       <style>
@@ -77,20 +76,14 @@ export function TokenGenerator() {
           `).join('')}
         </tbody>
       </table>
-      <p style="font-size: 10pt; font-style: italic; margin-top: 30px; text-align: center;">
-        Ce document contient des informations confidentielles. Remettez chaque code individuellement aux parents.
-      </p>
     `;
 
     const source = header + tableHtml + footer;
-    const blob = new Blob(['\ufeff', source], {
-      type: 'application/msword'
-    });
-    
+    const blob = new Blob(['\ufeff', source], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Identifiants_EduTrack_${selectedClass.replace(/\s+/g, '_')}.doc`;
+    link.download = `Identifiants_${selectedClass.replace(/\s+/g, '_')}.doc`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -168,7 +161,7 @@ export function TokenGenerator() {
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
-                  <TableHead className="pl-6 py-4">Identifiant de Connexion</TableHead>
+                  <TableHead className="pl-6 py-4">Identifiant</TableHead>
                   <TableHead>Propriétaire</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right pr-6">Date d'Activation</TableHead>
@@ -178,23 +171,23 @@ export function TokenGenerator() {
                 {currentClassTokens.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">
-                      Aucun code n'a encore été généré pour la classe {selectedClass}.
+                      Aucun code généré pour la classe {selectedClass}.
                     </TableCell>
                   </TableRow>
                 ) : (
                   currentClassTokens.map((token) => (
                     <TableRow key={token.id} className="hover:bg-emerald-50/20 transition-colors">
-                      <TableCell className="pl-6 font-mono font-black text-emerald-700 text-lg tracking-wider">{token.id}</TableCell>
-                      <TableCell className="font-bold text-slate-700">{token.studentName}</TableCell>
+                      <TableCell className="pl-6 font-mono font-black text-emerald-700">{token.id}</TableCell>
+                      <TableCell className="font-bold">{token.studentName}</TableCell>
                       <TableCell>
                         {token.status === 'activated' ? (
                           <Badge className="bg-emerald-600 gap-1 rounded-full"><CheckCircle className="w-3 h-3" /> Activé</Badge>
                         ) : (
-                          <Badge variant="secondary" className="gap-1 rounded-full bg-slate-200 text-slate-500 font-bold"><Clock className="w-3 h-3" /> Disponible</Badge>
+                          <Badge variant="secondary" className="gap-1 rounded-full"><Clock className="w-3 h-3" /> Disponible</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-right pr-6 text-xs text-muted-foreground">
-                        {token.activatedAt ? new Date(token.activatedAt).toLocaleDateString('fr-BJ', { hour: '2-digit', minute: '2-digit' }) : '--'}
+                        {token.activatedAt ? new Date(token.activatedAt).toLocaleDateString('fr-BJ') : '--'}
                       </TableCell>
                     </TableRow>
                   ))
