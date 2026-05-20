@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ALL_CLASSES, SUBJECTS, User, GradeRecord } from "@/lib/school-types";
 import { getFromStorage, saveGrade, getCoefficient } from "@/lib/data-service";
 import { calculateMoyenneComplex } from "@/lib/school-logic";
-import { FileEdit, Save, CheckCircle, Info, FileDown, Eye } from "lucide-react";
+import { FileEdit, Save, CheckCircle, Info, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { StudentGradeView } from "./student-grade-view";
@@ -134,7 +134,7 @@ export function GradeManager({ user }: { user: User }) {
                   <TableHead className="text-center">Interrogations</TableHead>
                   <TableHead className="text-center">Devoirs</TableHead>
                   <TableHead className="w-24 text-center font-black">Moy.</TableHead>
-                  <TableHead className="text-right pr-6">Actions</TableHead>
+                  <TableHead className="text-right pr-6">Bulletin</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -191,7 +191,7 @@ export function GradeManager({ user }: { user: User }) {
                             </DialogTrigger>
                             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                               <DialogHeader>
-                                <DialogTitle>Bulletin de {student.name}</DialogTitle>
+                                <DialogTitle>Prévisualisation Bulletin : {student.name}</DialogTitle>
                               </DialogHeader>
                               <StudentGradeView student={student} />
                             </DialogContent>

@@ -151,7 +151,7 @@ export function StudentGradeView({ student }: { student: User }) {
 
         <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #1A6B4A;">
           <strong style="font-size: 18px; color: #1A6B4A;">MOYENNE GÉNÉRALE PONDÉRÉE : ${overallStats.me.toFixed(2)} / 20</strong><br>
-          <span>Rang : Analyse en cours...</span> | 
+          <span>Mention : ${overallStats.me >= 16 ? "Très Bien" : overallStats.me >= 14 ? "Bien" : overallStats.me >= 12 ? "Assez Bien" : overallStats.me >= 10 ? "Passable" : "Insuffisant"}</span> | 
           <span>Premier de classe : ${overallStats.first.toFixed(2)}</span>
         </div>
 

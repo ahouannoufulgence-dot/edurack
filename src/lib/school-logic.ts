@@ -4,11 +4,13 @@
  * Moyenne Interrogations (MI) = somme des interros / nombre d'interros saisies
  * Moyenne Devoirs (MD) = somme des devoirs / nombre de devoirs saisis
  * Moyenne Trimestrielle = (MI + MD) / 2
+ * 
+ * Si aucune note n'est saisie, retourne 0.
  */
 export function calculateMoyenneComplex(
   interros: (number | null)[], 
   devoirs: (number | null)[], 
-  composition?: number | null // Conservé pour compatibilité de type mais ignoré
+  composition?: number | null // Conservé pour compatibilité mais ignoré
 ): number {
   const validInterros = interros.filter(n => n !== null && !isNaN(n as number)) as number[];
   const validDevoirs = devoirs.filter(n => n !== null && !isNaN(n as number)) as number[];
@@ -23,11 +25,12 @@ export function calculateMoyenneComplex(
     ? validDevoirs.reduce((a, b) => a + b, 0) / validDevoirs.length 
     : 0;
 
-  // Si l'une des deux moyennes est vide, on prend l'autre comme base
+  // Calcul final : moyenne des deux types de notes
   if (validInterros.length > 0 && validDevoirs.length > 0) {
     return parseFloat(((mi + md) / 2).toFixed(2));
   }
   
+  // Si un seul type est présent, on prend cette moyenne seule
   return parseFloat((mi || md).toFixed(2));
 }
 
