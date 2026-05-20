@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { User, GradeRecord, SUBJECTS } from "@/lib/school-types";
 import { getFromStorage, getCoefficient } from "@/lib/data-service";
-import { FileText, TrendingUp, Award, Trophy, UserRound, BarChart3 } from "lucide-react";
+import { FileText, TrendingUp, Award, Trophy, UserRound, BarChart3, Download, Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { 
   BarChart, 
   Bar, 
@@ -18,30 +19,27 @@ import {
   Legend
 } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { useToast } from "@/hooks/use-toast";
 
 export function StudentGradeView({ student }: { student: User }) {
   const [grades, setGrades] = useState<GradeRecord[]>([]);
   const [subjectStats, setSubjectStats] = useState<any[]>([]);
   const [overallStats, setOverallStats] = useState({ first: 0, last: 0, me: 0 });
   const [selectedTrimestre, setSelectedTrimestre] = useState<'T1' | 'T2' | 'T3'>('T1');
+  const { toast } = useToast();
 
   useEffect(() => {
     const allGrades = getFromStorage<GradeRecord>('edutrack_grades');
     const allUsers = getFromStorage<User>('edutrack_users');
     const classLevel = student.classLevel || 'N/A';
     
-    // Filtrer les élèves de la même classe
     const classStudents = allUsers.filter(u => u.role === 'Eleve' && u.classLevel === classLevel);
     const classStudentIds = classStudents.map(s => s.id);
 
-    // Grades du trimestre pour toute la classe
     const trimesterGrades = allGrades.filter(g => g.trimestre === selectedTrimestre && classStudentIds.includes(g.eleveId));
-    
-    // Grades de l'élève actuel
     const myGrades = trimesterGrades.filter(g => g.eleveId === student.id);
     setGrades(myGrades);
 
-    // Calcul par matière (Utilise les coefficients actuels)
     const statsBySubject = SUBJECTS.map(subj => {
       const subjectGrades = trimesterGrades.filter(g => g.matiereId === subj.id);
       const myGrade = myGrades.find(g => g.matiereId === subj.id);
@@ -63,7 +61,6 @@ export function StudentGradeView({ student }: { student: User }) {
 
     setSubjectStats(statsBySubject);
 
-    // Calcul global PONDÉRÉ
     const calculateWeightedAvg = (sId: string) => {
       const sGrades = trimesterGrades.filter(g => g.eleveId === sId);
       if (sGrades.length === 0) return 0;
@@ -72,7 +69,6 @@ export function StudentGradeView({ student }: { student: User }) {
       let totalCoeffs = 0;
       
       sGrades.forEach(g => {
-        // On récupère le coefficient en temps réel pour être sûr de la cohérence
         const coeff = getCoefficient(classLevel, g.matiereId);
         totalPoints += (g.moyenne * coeff);
         totalCoeffs += coeff;
@@ -82,13 +78,122 @@ export function StudentGradeView({ student }: { student: User }) {
     };
 
     const studentAverages = classStudentIds.map(id => calculateWeightedAvg(id)).filter(a => a > 0);
-
     const first = studentAverages.length > 0 ? Math.max(...studentAverages) : 0;
     const last = studentAverages.length > 0 ? Math.min(...studentAverages) : 0;
     const meOverall = calculateWeightedAvg(student.id);
 
     setOverallStats({ first, last, me: meOverall });
   }, [student.id, student.classLevel, selectedTrimestre]);
+
+  const handleDownloadBulletin = () => {
+    if (subjectStats.length === 0) {
+      toast({ variant: "destructive", title: "Erreur", description: "Aucune note disponible pour générer un bulletin." });
+      return;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+          .header { text-align: center; border-bottom: 2px solid #1A6B4A; padding-bottom: 20px; margin-bottom: 30px; }
+          .school-name { font-size: 24px; font-weight: bold; color: #1A6B4A; }
+          .bulletin-title { font-size: 20px; margin-top: 10px; text-transform: uppercase; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+          .info-box { border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+          th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+          th { background-color: #f4f7f6; color: #1A6B4A; }
+          .grade-badge { font-weight: bold; }
+          .summary { background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #1A6B4A; }
+          .footer { margin-top: 50px; text-align: right; font-style: italic; font-size: 12px; }
+          @media print { .no-print { display: none; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="school-name">EDUTRACK PRO - BÉNIN</div>
+          <div class="bulletin-title">Bulletin de Notes - ${selectedTrimestre}</div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-box">
+            <strong>ÉLÈVE :</strong> ${student.name}<br>
+            <strong>ID :</strong> ${student.id}<br>
+            <strong>GENRE :</strong> ${student.sexe}
+          </div>
+          <div class="info-box">
+            <strong>CLASSE :</strong> ${student.classLevel || 'N/A'}<br>
+            <strong>ANNÉE :</strong> 2025-2026<br>
+            <strong>STATUT :</strong> Régulier
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>MATIÈRE</th>
+              <th>COEFF.</th>
+              <th>MOYENNE</th>
+              <th>MIN CLASSE</th>
+              <th>MAX CLASSE</th>
+              <th>APPRÉCIATION</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${subjectStats.map(stat => {
+              const matiereId = SUBJECTS.find(s => s.name === stat.subject)?.id || '';
+              const coeff = getCoefficient(student.classLevel || 'N/A', matiereId);
+              const mention = stat.me >= 16 ? "Très Bien" : stat.me >= 14 ? "Bien" : stat.me >= 12 ? "Assez Bien" : stat.me >= 10 ? "Passable" : "Insuffisant";
+              return `
+                <tr>
+                  <td>${stat.subject}</td>
+                  <td>${coeff}</td>
+                  <td class="grade-badge">${stat.me.toFixed(2)}</td>
+                  <td>${stat.min.toFixed(2)}</td>
+                  <td>${stat.max.toFixed(2)}</td>
+                  <td>${mention}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+
+        <div class="summary">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong style="font-size: 18px; color: #1A6B4A;">MOYENNE GÉNÉRALE PONDÉRÉE : ${overallStats.me.toFixed(2)} / 20</strong><br>
+              <span>Premier de classe : ${overallStats.first.toFixed(2)}</span> | 
+              <span>Dernier de classe : ${overallStats.last.toFixed(2)}</span>
+            </div>
+            <div style="text-align: right;">
+              <strong>MENTION :</strong> ${overallStats.me >= 12 ? "Tableau d'Honneur" : "Encouragements"}
+            </div>
+          </div>
+        </div>
+
+        <div class="footer">
+          Fait à Cotonou, le ${new Date().toLocaleDateString('fr-BJ')}<br>
+          Cachet de l'Établissement - Document Certifié
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Bulletin_${selectedTrimestre}_${student.name.replace(/\s+/g, '_')}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({ title: "Téléchargement lancé", description: "Le bulletin a été généré avec succès." });
+  };
 
   const chartConfig = {
     me: { label: "Ma Note", color: "hsl(var(--primary))" },
@@ -105,16 +210,21 @@ export function StudentGradeView({ student }: { student: User }) {
           </h2>
           <p className="text-sm text-muted-foreground">Analyse détaillée de tes performances par matière.</p>
         </div>
-        <div className="flex bg-white p-1 rounded-xl shadow-sm border">
-          {['T1', 'T2', 'T3'].map((t) => (
-            <button
-              key={t}
-              onClick={() => setSelectedTrimestre(t as any)}
-              className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${selectedTrimestre === t ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
-            >
-              {t === 'T1' ? '1er Trim.' : t === 'T2' ? '2ème Trim.' : '3ème Trim.'}
-            </button>
-          ))}
+        <div className="flex gap-3">
+          <div className="flex bg-white p-1 rounded-xl shadow-sm border h-11 items-center">
+            {['T1', 'T2', 'T3'].map((t) => (
+              <button
+                key={t}
+                onClick={() => setSelectedTrimestre(t as any)}
+                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${selectedTrimestre === t ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+          <Button onClick={handleDownloadBulletin} className="bg-slate-900 hover:bg-slate-800 gap-2 h-11 rounded-xl font-bold shadow-lg">
+            <Download className="w-4 h-4" /> Bulletin
+          </Button>
         </div>
       </div>
 
@@ -123,7 +233,7 @@ export function StudentGradeView({ student }: { student: User }) {
           <CardContent className="p-6 flex items-center gap-4">
             <div className="bg-white/20 p-3 rounded-2xl"><TrendingUp className="w-6 h-6" /></div>
             <div>
-              <p className="text-xs font-bold uppercase opacity-80">Moyenne Générale Pondérée</p>
+              <p className="text-xs font-bold uppercase opacity-80">Moyenne Générale</p>
               <h3 className="text-3xl font-black">{overallStats.me.toFixed(2)} / 20</h3>
             </div>
           </CardContent>
@@ -186,68 +296,6 @@ export function StudentGradeView({ student }: { student: User }) {
               </ResponsiveContainer>
             </ChartContainer>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-none shadow-xl overflow-hidden bg-white">
-        <CardHeader className="bg-slate-50 border-b">
-          <CardTitle className="text-lg">Détails Certifiés des Résultats</CardTitle>
-          <CardDescription>Notes validées avec comparaison aux performances de la classe.</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-slate-50/50">
-              <TableRow>
-                <TableHead className="pl-6">Matière</TableHead>
-                <TableHead className="text-center">Ma Note</TableHead>
-                <TableHead className="text-center text-emerald-600">Meilleure</TableHead>
-                <TableHead className="text-center text-red-600">Minimale</TableHead>
-                <TableHead className="text-center font-bold">Statut</TableHead>
-                <TableHead className="text-right pr-6">Coeff. Actuel</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {subjectStats.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground italic">
-                    Aucun résultat publié pour ce trimestre.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                subjectStats.map((stat, idx) => {
-                  const matiereId = SUBJECTS.find(s => s.name === stat.subject)?.id || '';
-                  const activeCoeff = getCoefficient(student.classLevel || 'N/A', matiereId);
-                  
-                  return (
-                    <TableRow key={idx} className="hover:bg-slate-50/50 transition-colors group">
-                      <TableCell className="pl-6 font-bold text-slate-800 group-hover:text-emerald-700">
-                        {stat.subject}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge className={stat.me >= 10 ? "bg-emerald-600 px-3" : "bg-red-600 px-3"}>
-                          {stat.me.toFixed(2)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center font-bold text-emerald-700 bg-emerald-50/30">
-                        {stat.max.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-center font-bold text-red-700 bg-red-50/30">
-                        {stat.min.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-full bg-slate-100">
-                          {stat.me === stat.max ? "⭐ Major" : stat.me >= 10 ? "Validé" : "À renforcer"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right pr-6 text-xs font-black text-emerald-700">
-                        x{activeCoeff}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
         </CardContent>
       </Card>
     </div>
