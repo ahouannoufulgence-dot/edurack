@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClassLevel, ActivationToken, ALL_CLASSES } from "@/lib/school-types";
 import { generateBulkTokens, getTokens } from "@/lib/activation";
-import { ShieldCheck, Download, Printer, PlusCircle, CheckCircle, Clock, Zap } from "lucide-react";
+import { ShieldCheck, Download, Printer, PlusCircle, CheckCircle, Clock, Zap, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,7 +17,6 @@ export function TokenGenerator() {
   const [tokens, setTokens] = useState<ActivationToken[]>([]);
   const [selectedClass, setSelectedClass] = useState<ClassLevel>('3e 1');
   const [count, setCount] = useState(10);
-  const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -33,69 +32,65 @@ export function TokenGenerator() {
     });
   };
 
-  const handleDownloadList = async () => {
+  const handleDownloadWord = () => {
     const classTokens = tokens.filter(t => t.classLevel === selectedClass);
     if (classTokens.length === 0) {
       toast({ variant: "destructive", title: "Erreur", description: "Aucun identifiant à exporter pour cette classe." });
       return;
     }
 
-    setIsExporting(true);
-    toast({ title: "Génération PDF", description: "Veuillez patienter..." });
-
-    try {
-      const { jsPDF } = await import('jspdf');
-      const html2canvas = (await import('html2canvas')).default;
-
-      const element = document.createElement('div');
-      element.style.padding = '40px';
-      element.style.width = '800px';
-      element.style.backgroundColor = 'white';
-      element.innerHTML = `
-        <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1A6B4A; padding-bottom: 10px;">
-          <h1 style="color: #1A6B4A; margin-bottom: 5px;">EDUTRACK PRO - LISTE D'ACTIVATION</h1>
-          <p>CLASSE : <strong>${selectedClass}</strong> | DATE : ${new Date().toLocaleDateString('fr-BJ')}</p>
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-          <thead>
-            <tr style="background: #f4f7f6;">
-              <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">ID DE CONNEXION</th>
-              <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">NOM DE L'ÉLÈVE</th>
-              <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">STATUT</th>
+    // MIME type for Word document
+    const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><meta charset='utf-8'><title>Export Word EduTrack</title>
+      <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid black; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        h1 { color: #1A6B4A; text-align: center; }
+      </style>
+      </head><body>`;
+    const footer = "</body></html>";
+    
+    const tableHtml = `
+      <h1>EDUTRACK PRO - LISTE D'ACTIVATION</h1>
+      <p><b>CLASSE :</b> ${selectedClass}</p>
+      <p><b>DATE :</b> ${new Date().toLocaleDateString('fr-BJ')}</p>
+      <table>
+        <thead>
+          <tr>
+            <th>ID DE CONNEXION</th>
+            <th>NOM DE L'ÉLÈVE</th>
+            <th>STATUT</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${classTokens.map(t => `
+            <tr>
+              <td><b>${t.id}</b></td>
+              <td>${t.studentName || 'Libre'}</td>
+              <td>${t.status === 'activated' ? 'Activé' : 'Disponible'}</td>
             </tr>
-          </thead>
-          <tbody>
-            ${classTokens.map(t => `
-              <tr>
-                <td style="border: 1px solid #ddd; padding: 12px; font-family: monospace; font-weight: bold; color: #1A6B4A;">${t.id}</td>
-                <td style="border: 1px solid #ddd; padding: 12px;">${t.studentName || 'Libre'}</td>
-                <td style="border: 1px solid #ddd; padding: 12px;">${t.status === 'activated' ? 'Activé' : 'Disponible'}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
+          `).join('')}
+        </tbody>
+      </table>
+      <p style="font-size: 10px; font-style: italic; margin-top: 20px;">Document généré par EduTrack Pro - Système de Gestion Scolaire Bénin</p>
+    `;
 
-      document.body.appendChild(element);
-      const canvas = await html2canvas(element, { scale: 2 });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Liste_Activation_${selectedClass.replace(/\s+/g, '_')}.pdf`);
-      document.body.removeChild(element);
-
-      toast({ title: "Succès", description: "La liste PDF a été téléchargée." });
-    } catch (error) {
-      console.error(error);
-      toast({ variant: "destructive", title: "Erreur", description: "Échec de l'exportation PDF." });
-    } finally {
-      setIsExporting(false);
-    }
+    const source = header + tableHtml + footer;
+    const blob = new Blob(['\ufeff', source], {
+      type: 'application/msword'
+    });
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Liste_Activation_${selectedClass.replace(/\s+/g, '_')}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast({ title: "Succès", description: "La liste Word a été téléchargée." });
   };
 
   const currentClassTokens = tokens.filter(t => t.classLevel === selectedClass);
@@ -111,8 +106,8 @@ export function TokenGenerator() {
           <p className="text-sm text-muted-foreground">Générez les identifiants à remettre aux élèves pour leur première connexion.</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleDownloadList} disabled={isExporting} variant="outline" className="gap-2 h-10 rounded-xl border-emerald-200 text-emerald-700">
-            <Download className="w-4 h-4" /> Télécharger PDF
+          <Button onClick={handleDownloadWord} variant="outline" className="gap-2 h-10 rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50">
+            <FileText className="w-4 h-4" /> Télécharger (Word)
           </Button>
           <Button variant="outline" className="gap-2 h-10 rounded-xl"><Printer className="w-4 h-4" /> Imprimer</Button>
         </div>
