@@ -44,7 +44,7 @@ export function TokenGenerator() {
       <style>
         table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
         th, td { border: 1px solid black; padding: 10px; text-align: left; }
-        th { background-color: #f2f2f2; font-weight: bold; }
+        th { background-color: #1A6B4A; color: white; font-weight: bold; }
         h1 { color: #1A6B4A; text-align: center; font-size: 24pt; }
         .class-info { margin-bottom: 20px; font-size: 14pt; }
       </style>
@@ -60,7 +60,7 @@ export function TokenGenerator() {
       </div>
       <table>
         <thead>
-          <tr style="background-color: #1A6B4A; color: white;">
+          <tr>
             <th>ID DE CONNEXION</th>
             <th>NOM DE L'ÉLÈVE (À COMPLÉTER)</th>
             <th>STATUT</th>
@@ -107,7 +107,6 @@ export function TokenGenerator() {
         <div className="flex flex-wrap gap-2">
           <Button 
             onClick={handleDownloadWord} 
-            variant="default" 
             className="gap-2 h-11 rounded-xl bg-emerald-700 hover:bg-emerald-800 font-bold shadow-lg"
           >
             <FileText className="w-4 h-4" /> Télécharger (Fichier Word)
