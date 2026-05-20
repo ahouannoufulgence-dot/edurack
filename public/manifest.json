@@ -1,19 +1,19 @@
 {
   "name": "EduTrack Pro",
   "short_name": "EduTrack",
-  "description": "Gestion scolaire moderne pour établissements au Bénin",
+  "description": "Gestion Scolaire Intégrée - Bénin",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1A6B4A",
   "icons": [
     {
-      "src": "https://placehold.co/192x192/1A6B4A/white?text=EduTrack",
+      "src": "https://placehold.co/192x192/1A6B4A/ffffff?text=ET",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://placehold.co/512x512/1A6B4A/white?text=EduTrack",
+      "src": "https://placehold.co/512x512/1A6B4A/ffffff?text=EduTrack",
       "sizes": "512x512",
       "type": "image/png"
     }
