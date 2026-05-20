@@ -107,10 +107,10 @@ export function TokenGenerator() {
         <div className="flex flex-wrap gap-2">
           <Button 
             onClick={handleDownloadWord} 
-            variant="outline" 
-            className="gap-2 h-11 rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-bold"
+            variant="default" 
+            className="gap-2 h-11 rounded-xl bg-emerald-700 hover:bg-emerald-800 font-bold shadow-lg"
           >
-            <FileText className="w-4 h-4" /> Télécharger (Word)
+            <FileText className="w-4 h-4" /> Télécharger (Fichier Word)
           </Button>
           <Button variant="outline" className="gap-2 h-11 rounded-xl font-bold">
             <Printer className="w-4 h-4" /> Imprimer

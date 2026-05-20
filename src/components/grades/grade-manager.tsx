@@ -10,8 +10,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ALL_CLASSES, SUBJECTS, User, GradeRecord } from "@/lib/school-types";
 import { getFromStorage, saveGrade, getCoefficient } from "@/lib/data-service";
 import { calculateMoyenneComplex } from "@/lib/school-logic";
-import { FileEdit, Save, CheckCircle, Info } from "lucide-react";
+import { FileEdit, Save, CheckCircle, Info, FileDown, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { StudentGradeView } from "./student-grade-view";
 
 type ScoreState = {
   interros: string[];
@@ -117,7 +119,7 @@ export function GradeManager({ user }: { user: User }) {
             <SelectContent>{SUBJECTS.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
           </Select>
           <Button onClick={handleSaveAll} className="bg-emerald-700 hover:bg-emerald-800 h-11 px-8 rounded-xl font-bold shadow-md">
-            <Save className="w-4 h-4 mr-2" /> Enregistrer
+            <Save className="w-4 h-4 mr-2" /> Enregistrer tout
           </Button>
         </div>
       </div>
@@ -132,7 +134,7 @@ export function GradeManager({ user }: { user: User }) {
                   <TableHead className="text-center">Interrogations</TableHead>
                   <TableHead className="text-center">Devoirs</TableHead>
                   <TableHead className="w-24 text-center font-black">Moy.</TableHead>
-                  <TableHead className="text-right pr-6">État</TableHead>
+                  <TableHead className="text-right pr-6">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -151,11 +153,11 @@ export function GradeManager({ user }: { user: User }) {
                       <TableCell>
                         <div className="flex gap-1 justify-center">
                           {[0, 1, 2].map(idx => (
-                            <Input 
+                            <input 
                               key={idx} type="number" 
                               value={s.interros[idx]} 
                               onChange={e => handleScoreChange(student.id, 'interros', idx, e.target.value)}
-                              className="w-12 h-9 text-center p-1"
+                              className="w-12 h-9 text-center p-1 border rounded-md focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
                               placeholder={`I${idx+1}`}
                             />
                           ))}
@@ -164,23 +166,42 @@ export function GradeManager({ user }: { user: User }) {
                       <TableCell>
                         <div className="flex gap-1 justify-center">
                           {[0, 1, 2].map(idx => (
-                            <Input 
+                            <input 
                               key={idx} type="number" 
                               value={s.devoirs[idx]} 
                               onChange={e => handleScoreChange(student.id, 'devoirs', idx, e.target.value)}
-                              className="w-12 h-9 text-center p-1"
+                              className="w-12 h-9 text-center p-1 border rounded-md focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
                               placeholder={`D${idx+1}`}
                             />
                           ))}
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className={`font-black ${moy >= 10 ? 'text-emerald-700' : 'text-red-600'}`}>
+                        <span className={`font-black text-sm ${moy >= 10 ? 'text-emerald-700' : 'text-red-600'}`}>
                           {moy > 0 ? moy.toFixed(2) : '--'}
                         </span>
                       </TableCell>
                       <TableCell className="text-right pr-6">
-                        {moy > 0 ? <CheckCircle className="w-4 h-4 text-emerald-500 inline" /> : <Info className="w-4 h-4 text-slate-300 inline" />}
+                        <div className="flex justify-end gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg hover:bg-emerald-50">
+                                <Eye className="w-4 h-4 text-emerald-600" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle>Bulletin de {student.name}</DialogTitle>
+                              </DialogHeader>
+                              <StudentGradeView student={student} />
+                            </DialogContent>
+                          </Dialog>
+                          {moy > 0 ? (
+                             <CheckCircle className="w-4 h-4 text-emerald-500 my-auto" />
+                          ) : (
+                             <Info className="w-4 h-4 text-slate-300 my-auto" />
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
