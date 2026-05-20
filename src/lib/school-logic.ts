@@ -1,4 +1,3 @@
-
 /**
  * Calcule la moyenne d'une matière selon le système sans composition :
  * Moyenne Interrogations (MI) = somme des interros / nombre d'interros saisies
