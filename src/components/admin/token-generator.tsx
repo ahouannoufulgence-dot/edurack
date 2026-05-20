@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClassLevel, ActivationToken, ALL_CLASSES } from "@/lib/school-types";
 import { generateBulkTokens, getTokens } from "@/lib/activation";
-import { ShieldCheck, Download, Printer, PlusCircle, CheckCircle, Clock, Zap, FileSpreadsheet } from "lucide-react";
+import { ShieldCheck, Download, Printer, PlusCircle, CheckCircle, Clock, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,6 +17,7 @@ export function TokenGenerator() {
   const [tokens, setTokens] = useState<ActivationToken[]>([]);
   const [selectedClass, setSelectedClass] = useState<ClassLevel>('3e 1');
   const [count, setCount] = useState(10);
+  const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -32,74 +33,69 @@ export function TokenGenerator() {
     });
   };
 
-  const handleDownloadList = () => {
+  const handleDownloadList = async () => {
     const classTokens = tokens.filter(t => t.classLevel === selectedClass);
     if (classTokens.length === 0) {
       toast({ variant: "destructive", title: "Erreur", description: "Aucun identifiant à exporter pour cette classe." });
       return;
     }
 
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html lang="fr">
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          body { font-family: sans-serif; padding: 30px; }
-          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1A6B4A; padding-bottom: 10px; }
-          h1 { color: #1A6B4A; margin-bottom: 5px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-          th { background: #f4f7f6; }
-          .token-code { font-family: monospace; font-weight: bold; color: #1A6B4A; font-size: 1.2em; }
-          .instructions { margin-top: 30px; background: #fff8e1; padding: 20px; border-radius: 8px; border: 1px solid #ffca28; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>EDUTRACK PRO - LISTE D'ACTIVATION</h1>
+    setIsExporting(true);
+    toast({ title: "Génération PDF", description: "Veuillez patienter..." });
+
+    try {
+      const { jsPDF } = await import('jspdf');
+      const html2canvas = (await import('html2canvas')).default;
+
+      const element = document.createElement('div');
+      element.style.padding = '40px';
+      element.style.width = '800px';
+      element.style.backgroundColor = 'white';
+      element.innerHTML = `
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1A6B4A; padding-bottom: 10px;">
+          <h1 style="color: #1A6B4A; margin-bottom: 5px;">EDUTRACK PRO - LISTE D'ACTIVATION</h1>
           <p>CLASSE : <strong>${selectedClass}</strong> | DATE : ${new Date().toLocaleDateString('fr-BJ')}</p>
         </div>
 
-        <table>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
           <thead>
-            <tr>
-              <th>ID DE CONNEXION</th>
-              <th>NOM DE L'ÉLÈVE (SI ACTIVÉ)</th>
-              <th>STATUT</th>
-              <th>DATE D'ACTIVATION</th>
+            <tr style="background: #f4f7f6;">
+              <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">ID DE CONNEXION</th>
+              <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">NOM DE L'ÉLÈVE</th>
+              <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">STATUT</th>
             </tr>
           </thead>
           <tbody>
             ${classTokens.map(t => `
               <tr>
-                <td class="token-code">${t.id}</td>
-                <td>${t.studentName || 'Libre'}</td>
-                <td>${t.status === 'activated' ? 'Activé' : 'En attente'}</td>
-                <td>${t.activatedAt ? new Date(t.activatedAt).toLocaleDateString('fr-BJ') : '--'}</td>
+                <td style="border: 1px solid #ddd; padding: 12px; font-family: monospace; font-weight: bold; color: #1A6B4A;">${t.id}</td>
+                <td style="border: 1px solid #ddd; padding: 12px;">${t.studentName || 'Libre'}</td>
+                <td style="border: 1px solid #ddd; padding: 12px;">${t.status === 'activated' ? 'Activé' : 'Disponible'}</td>
               </tr>
             `).join('')}
           </tbody>
         </table>
+      `;
 
-        <div class="instructions">
-          <strong>Instructions :</strong> Distribuez ces codes aux élèves. Ils devront cliquer sur "Activer mon compte" sur la page d'accueil d'EduTrack Pro et saisir ce code pour créer leur profil sécurisé.
-        </div>
-      </body>
-      </html>
-    `;
+      document.body.appendChild(element);
+      const canvas = await html2canvas(element, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Liste_Activation_${selectedClass.replace(/\s+/g, '_')}.pdf`);
+      document.body.removeChild(element);
 
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Identifiants_${selectedClass.replace(/\s+/g, '_')}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    toast({ title: "Liste exportée", description: "Le document HTML a été téléchargé." });
+      toast({ title: "Succès", description: "La liste PDF a été téléchargée." });
+    } catch (error) {
+      console.error(error);
+      toast({ variant: "destructive", title: "Erreur", description: "Échec de l'exportation PDF." });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const currentClassTokens = tokens.filter(t => t.classLevel === selectedClass);
@@ -115,10 +111,10 @@ export function TokenGenerator() {
           <p className="text-sm text-muted-foreground">Générez les identifiants à remettre aux élèves pour leur première connexion.</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleDownloadList} variant="outline" className="gap-2 h-10 rounded-xl border-emerald-200 text-emerald-700">
-            <Download className="w-4 h-4" /> Télécharger la liste
+          <Button onClick={handleDownloadList} disabled={isExporting} variant="outline" className="gap-2 h-10 rounded-xl border-emerald-200 text-emerald-700">
+            <Download className="w-4 h-4" /> Télécharger PDF
           </Button>
-          <Button variant="outline" className="gap-2 h-10 rounded-xl"><Printer className="w-4 h-4" /> Imprimer étiquettes</Button>
+          <Button variant="outline" className="gap-2 h-10 rounded-xl"><Printer className="w-4 h-4" /> Imprimer</Button>
         </div>
       </div>
 
@@ -149,7 +145,7 @@ export function TokenGenerator() {
               />
             </div>
             <Button onClick={handleGenerate} className="bg-emerald-600 hover:bg-emerald-700 gap-2 h-11 px-8 rounded-xl shadow-lg">
-              <PlusCircle className="w-4 h-4" /> Générer spontanément
+              <PlusCircle className="w-4 h-4" /> Générer
             </Button>
           </div>
         </CardContent>
@@ -186,7 +182,7 @@ export function TokenGenerator() {
                       {token.status === 'activated' ? (
                         <Badge className="bg-emerald-600 gap-1 rounded-full"><CheckCircle className="w-3 h-3" /> Activé</Badge>
                       ) : (
-                        <Badge variant="secondary" className="gap-1 rounded-full bg-slate-200"><Clock className="w-3 h-3" /> Prêt (Libre)</Badge>
+                        <Badge variant="secondary" className="gap-1 rounded-full bg-slate-200"><Clock className="w-3 h-3" /> Libre</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-right pr-6 text-xs text-muted-foreground">

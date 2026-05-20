@@ -17,6 +17,7 @@ interface AIReportProps {
 export function RemediationReport({ student }: AIReportProps) {
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<GenerateRemediationReportOutput | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -50,7 +51,7 @@ export function RemediationReport({ student }: AIReportProps) {
           trimester: t,
           subjects,
           overallAverage: parseFloat(overallAverage.toFixed(2)),
-          rank: "Analyse des performances..."
+          rank: "Analyse en cours..."
         };
       }).filter(p => p.subjects.length > 0);
 
@@ -72,100 +73,63 @@ export function RemediationReport({ student }: AIReportProps) {
     }
   };
 
-  const handleExportHtml = () => {
+  const handleDownloadPdf = async () => {
     if (!report) return;
 
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html lang="fr">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${report.title} - ${student.name}</title>
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 40px; background-color: #f4f7f6; }
-          .report-card { background: white; padding: 40px; border-radius: 15px; shadow: 0 4px 6px rgba(0,0,0,0.1); border-top: 10px solid #1A6B4A; }
-          header { text-align: center; margin-bottom: 40px; }
-          h1 { color: #1A6B4A; margin-bottom: 10px; }
-          .meta { color: #666; font-size: 0.9em; margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
-          section { margin-bottom: 30px; }
-          h2 { color: #1A6B4A; font-size: 1.2em; border-left: 4px solid #4A9649; padding-left: 15px; margin-bottom: 15px; }
-          .assessment { font-style: italic; color: #555; background: #f9f9f9; padding: 20px; border-radius: 8px; }
-          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-          .strengths { background: #e8f5e9; padding: 20px; border-radius: 8px; }
-          .improvements { background: #fff3e0; padding: 20px; border-radius: 8px; }
-          ul { padding-left: 20px; }
-          li { margin-bottom: 10px; }
-          .subject-detail { margin-bottom: 15px; }
-          .subject-name { font-weight: bold; color: #e65100; }
-          footer { text-align: center; margin-top: 50px; font-size: 0.8em; color: #999; }
-          @media print { body { background: white; padding: 0; } .report-card { border: none; shadow: none; } }
-        </style>
-      </head>
-      <body>
-        <div class="report-card">
-          <header>
-            <h1>EduTrack Pro</h1>
-            <p>Analyse Pédagogique Intelligente</p>
-          </header>
+    setIsDownloading(true);
+    toast({ title: "Génération PDF", description: "Votre rapport est en préparation..." });
+
+    try {
+      const { jsPDF } = await import('jspdf');
+      const html2canvas = (await import('html2canvas')).default;
+
+      const element = document.createElement('div');
+      element.style.padding = '40px';
+      element.style.width = '800px';
+      element.style.backgroundColor = 'white';
+      element.innerHTML = `
+        <div style="border-top: 10px solid #1A6B4A; padding: 20px;">
+          <h1 style="color: #1A6B4A; text-align: center;">EduTrack Pro - Rapport IA</h1>
+          <p style="text-align: center; font-weight: bold;">${report.title}</p>
           
-          <div class="meta">
-            <strong>Élève :</strong> ${student.name} | 
-            <strong>Classe :</strong> ${student.classLevel || 'N/A'} | 
-            <strong>ID :</strong> ${student.id}
+          <div style="margin: 20px 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+            <strong>Élève :</strong> ${student.name} | <strong>Classe :</strong> ${student.classLevel}
           </div>
 
-          <section>
-            <h2>${report.title}</h2>
-            <div class="assessment">${report.overallAssessment}</div>
-          </section>
+          <h2 style="color: #1A6B4A; font-size: 18px;">Évaluation Globale</h2>
+          <p style="font-style: italic;">${report.overallAssessment}</p>
 
-          <div class="grid">
-            <section class="strengths">
-              <h3>Points Forts</h3>
-              <ul>
-                ${report.strengths.map(s => `<li>${s}</li>`).join('')}
-              </ul>
-            </section>
-            
-            <section class="improvements">
-              <h3>Axes d'Amélioration</h3>
-              ${report.areasForImprovement.map(area => `
-                <div class="subject-detail">
-                  <div class="subject-name">${area.subject}</div>
-                  <div>${area.details}</div>
-                </div>
-              `).join('')}
-            </section>
-          </div>
+          <h2 style="color: #1A6B4A; font-size: 18px;">Points Forts</h2>
+          <ul>${report.strengths.map(s => `<li>${s}</li>`).join('')}</ul>
 
-          <section>
-            <h2>Recommandations Générales</h2>
-            <p style="white-space: pre-line;">${report.generalRecommendations}</p>
-          </section>
+          <h2 style="color: #1A6B4A; font-size: 18px;">Axes d'Amélioration</h2>
+          ${report.areasForImprovement.map(area => `
+            <p><strong>${area.subject}:</strong> ${area.details}</p>
+          `).join('')}
 
-          <footer>
-            Document généré par EduTrack Pro IA - Vision Excellence Scolaire au Bénin
-          </footer>
+          <h2 style="color: #1A6B4A; font-size: 18px;">Recommandations</h2>
+          <p>${report.generalRecommendations}</p>
         </div>
-      </body>
-      </html>
-    `;
+      `;
 
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Rapport_Remediation_${student.name.replace(/\s+/g, '_')}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      document.body.appendChild(element);
+      const canvas = await html2canvas(element, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Rapport_Remediation_${student.name.replace(/\s+/g, '_')}.pdf`);
+      document.body.removeChild(element);
 
-    toast({
-      title: "Téléchargement lancé",
-      description: "Le rapport HTML a été généré avec succès."
-    });
+      toast({ title: "Succès", description: "Rapport PDF téléchargé." });
+    } catch (error) {
+      console.error(error);
+      toast({ variant: "destructive", title: "Erreur", description: "Échec de la génération PDF." });
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -189,7 +153,7 @@ export function RemediationReport({ student }: AIReportProps) {
               className="bg-emerald-deep hover:bg-emerald-deep/90 h-12 px-8 rounded-full font-bold shadow-lg gap-2"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-              {loading ? "Calcul pondéré et analyse..." : "Lancer l'analyse intelligente"}
+              {loading ? "Calcul pondéré..." : "Lancer l'analyse"}
             </Button>
           </CardContent>
         </Card>
@@ -243,14 +207,14 @@ export function RemediationReport({ student }: AIReportProps) {
             </div>
 
             <section className="bg-gray-50 p-6 rounded-xl border border-dashed border-gray-200">
-              <h4 className="font-bold text-gray-900 mb-4">Recommandations Générales</h4>
+              <h4 className="font-bold text-gray-900 mb-4">Recommandations</h4>
               <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{report.generalRecommendations}</p>
             </section>
           </CardContent>
           <CardFooter className="bg-gray-50 rounded-b-lg border-t flex justify-between">
             <Button variant="ghost" onClick={() => setReport(null)}>Nouvelle Analyse</Button>
-            <Button variant="outline" onClick={handleExportHtml} className="gap-2">
-              <Download className="w-4 h-4" /> Télécharger en HTML
+            <Button variant="outline" onClick={handleDownloadPdf} disabled={isDownloading} className="gap-2">
+              <Download className="w-4 h-4" /> Télécharger PDF
             </Button>
           </CardFooter>
         </Card>

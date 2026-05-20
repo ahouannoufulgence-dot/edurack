@@ -10,10 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ALL_CLASSES, SUBJECTS, User, GradeRecord } from "@/lib/school-types";
 import { getFromStorage, saveGrade, getCoefficient } from "@/lib/data-service";
 import { calculateMoyenneComplex } from "@/lib/school-logic";
-import { FileEdit, Save, CheckCircle, Info, ChevronDown } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { FileEdit, Save, CheckCircle, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type ScoreState = {
   interros: string[];

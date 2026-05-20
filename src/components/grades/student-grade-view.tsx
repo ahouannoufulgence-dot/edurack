@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { User, GradeRecord, SUBJECTS } from "@/lib/school-types";
 import { getFromStorage, getCoefficient } from "@/lib/data-service";
-import { FileText, TrendingUp, Award, Trophy, UserRound, BarChart3, Download, Printer } from "lucide-react";
+import { FileText, TrendingUp, Trophy, UserRound, BarChart3, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   BarChart, 
@@ -26,6 +26,7 @@ export function StudentGradeView({ student }: { student: User }) {
   const [subjectStats, setSubjectStats] = useState<any[]>([]);
   const [overallStats, setOverallStats] = useState({ first: 0, last: 0, me: 0 });
   const [selectedTrimestre, setSelectedTrimestre] = useState<'T1' | 'T2' | 'T3'>('T1');
+  const [isDownloading, setIsDownloading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -85,114 +86,99 @@ export function StudentGradeView({ student }: { student: User }) {
     setOverallStats({ first, last, me: meOverall });
   }, [student.id, student.classLevel, selectedTrimestre]);
 
-  const handleDownloadBulletin = () => {
+  const handleDownloadBulletin = async () => {
     if (subjectStats.length === 0) {
       toast({ variant: "destructive", title: "Erreur", description: "Aucune note disponible pour générer un bulletin." });
       return;
     }
 
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html lang="fr">
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
-          .header { text-align: center; border-bottom: 2px solid #1A6B4A; padding-bottom: 20px; margin-bottom: 30px; }
-          .school-name { font-size: 24px; font-weight: bold; color: #1A6B4A; }
-          .bulletin-title { font-size: 20px; margin-top: 10px; text-transform: uppercase; }
-          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
-          .info-box { border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-          th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-          th { background-color: #f4f7f6; color: #1A6B4A; }
-          .grade-badge { font-weight: bold; }
-          .summary { background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #1A6B4A; }
-          .footer { margin-top: 50px; text-align: right; font-style: italic; font-size: 12px; }
-          @media print { .no-print { display: none; } }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="school-name">EDUTRACK PRO - BÉNIN</div>
-          <div class="bulletin-title">Bulletin de Notes - ${selectedTrimestre}</div>
+    setIsDownloading(true);
+    toast({ title: "Génération PDF", description: "Veuillez patienter..." });
+
+    try {
+      const { jsPDF } = await import('jspdf');
+      const html2canvas = (await import('html2canvas')).default;
+
+      const element = document.createElement('div');
+      element.style.padding = '40px';
+      element.style.width = '800px';
+      element.style.backgroundColor = 'white';
+      element.innerHTML = `
+        <div style="text-align: center; border-bottom: 2px solid #1A6B4A; padding-bottom: 20px; margin-bottom: 30px;">
+          <h1 style="color: #1A6B4A; font-size: 28px; margin: 0;">EDUTRACK PRO - BÉNIN</h1>
+          <h2 style="font-size: 20px; margin-top: 10px; text-transform: uppercase;">Bulletin de Notes - ${selectedTrimestre}</h2>
         </div>
 
-        <div class="info-grid">
-          <div class="info-box">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+          <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
             <strong>ÉLÈVE :</strong> ${student.name}<br>
             <strong>ID :</strong> ${student.id}<br>
             <strong>GENRE :</strong> ${student.sexe}
           </div>
-          <div class="info-box">
+          <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
             <strong>CLASSE :</strong> ${student.classLevel || 'N/A'}<br>
             <strong>ANNÉE :</strong> 2025-2026<br>
             <strong>STATUT :</strong> Régulier
           </div>
         </div>
 
-        <table>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
           <thead>
-            <tr>
-              <th>MATIÈRE</th>
-              <th>COEFF.</th>
-              <th>MOYENNE</th>
-              <th>MIN CLASSE</th>
-              <th>MAX CLASSE</th>
-              <th>APPRÉCIATION</th>
+            <tr style="background-color: #f4f7f6;">
+              <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">MATIÈRE</th>
+              <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">COEFF.</th>
+              <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">MOYENNE</th>
+              <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">MIN CLASSE</th>
+              <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">MAX CLASSE</th>
             </tr>
           </thead>
           <tbody>
             ${subjectStats.map(stat => {
               const matiereId = SUBJECTS.find(s => s.name === stat.subject)?.id || '';
               const coeff = getCoefficient(student.classLevel || 'N/A', matiereId);
-              const mention = stat.me >= 16 ? "Très Bien" : stat.me >= 14 ? "Bien" : stat.me >= 12 ? "Assez Bien" : stat.me >= 10 ? "Passable" : "Insuffisant";
               return `
                 <tr>
-                  <td>${stat.subject}</td>
-                  <td>${coeff}</td>
-                  <td class="grade-badge">${stat.me.toFixed(2)}</td>
-                  <td>${stat.min.toFixed(2)}</td>
-                  <td>${stat.max.toFixed(2)}</td>
-                  <td>${mention}</td>
+                  <td style="border: 1px solid #ddd; padding: 12px;">${stat.subject}</td>
+                  <td style="border: 1px solid #ddd; padding: 12px;">${coeff}</td>
+                  <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">${stat.me.toFixed(2)}</td>
+                  <td style="border: 1px solid #ddd; padding: 12px;">${stat.min.toFixed(2)}</td>
+                  <td style="border: 1px solid #ddd; padding: 12px;">${stat.max.toFixed(2)}</td>
                 </tr>
               `;
             }).join('')}
           </tbody>
         </table>
 
-        <div class="summary">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <strong style="font-size: 18px; color: #1A6B4A;">MOYENNE GÉNÉRALE PONDÉRÉE : ${overallStats.me.toFixed(2)} / 20</strong><br>
-              <span>Premier de classe : ${overallStats.first.toFixed(2)}</span> | 
-              <span>Dernier de classe : ${overallStats.last.toFixed(2)}</span>
-            </div>
-            <div style="text-align: right;">
-              <strong>MENTION :</strong> ${overallStats.me >= 12 ? "Tableau d'Honneur" : "Encouragements"}
-            </div>
-          </div>
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #1A6B4A;">
+          <strong style="font-size: 18px; color: #1A6B4A;">MOYENNE GÉNÉRALE PONDÉRÉE : ${overallStats.me.toFixed(2)} / 20</strong><br>
+          <span>Rang : Analyse en cours...</span> | 
+          <span>Premier de classe : ${overallStats.first.toFixed(2)}</span>
         </div>
 
-        <div class="footer">
-          Fait à Cotonou, le ${new Date().toLocaleDateString('fr-BJ')}<br>
-          Cachet de l'Établissement - Document Certifié
+        <div style="margin-top: 50px; text-align: right; font-style: italic; font-size: 12px;">
+          Document Certifié par EduTrack Pro - Vision Scolaire Bénin
         </div>
-      </body>
-      </html>
-    `;
+      `;
+      
+      document.body.appendChild(element);
+      const canvas = await html2canvas(element, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Bulletin_${selectedTrimestre}_${student.name.replace(/\s+/g, '_')}.pdf`);
+      document.body.removeChild(element);
 
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Bulletin_${selectedTrimestre}_${student.name.replace(/\s+/g, '_')}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    toast({ title: "Téléchargement lancé", description: "Le bulletin a été généré avec succès." });
+      toast({ title: "Téléchargement terminé", description: "Le bulletin PDF est prêt." });
+    } catch (error) {
+      console.error(error);
+      toast({ variant: "destructive", title: "Erreur PDF", description: "Échec de la génération du fichier." });
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const chartConfig = {
@@ -222,8 +208,8 @@ export function StudentGradeView({ student }: { student: User }) {
               </button>
             ))}
           </div>
-          <Button onClick={handleDownloadBulletin} className="bg-slate-900 hover:bg-slate-800 gap-2 h-11 rounded-xl font-bold shadow-lg">
-            <Download className="w-4 h-4" /> Bulletin
+          <Button onClick={handleDownloadBulletin} disabled={isDownloading} className="bg-slate-900 hover:bg-slate-800 gap-2 h-11 rounded-xl font-bold shadow-lg">
+            <Download className="w-4 h-4" /> Bulletin PDF
           </Button>
         </div>
       </div>
