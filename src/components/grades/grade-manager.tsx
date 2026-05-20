@@ -125,7 +125,7 @@ export function GradeManager({ user }: { user: User }) {
               <SelectTrigger className="bg-white text-xs h-10 md:h-11"><SelectValue /></SelectTrigger>
               <SelectContent>{SUBJECTS.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
             </Select>
-            <Button onClick={handleSaveAll} className="bg-emerald-700 hover:bg-emerald-800 gap-2 h-10 md:h-11 text-xs shadow-md col-span-2 md:col-span-1">
+            <Button onClick={handleSaveAll} className="bg-emerald-700 hover:bg-emerald-800 gap-2 h-10 md:h-11 text-xs shadow-md col-span-2 md:col-span-1 font-bold">
               <Save className="w-4 h-4" /> Sauvegarder
             </Button>
           </div>
@@ -139,7 +139,7 @@ export function GradeManager({ user }: { user: User }) {
               <TableHeader className="bg-slate-50">
                 <TableRow>
                   <TableHead className="pl-4 md:pl-6 py-4 sticky left-0 bg-slate-50 z-20 w-40 md:w-56 text-xs md:text-sm">Élève</TableHead>
-                  <TableHead className="text-center bg-blue-50/30 text-[10px] md:text-xs uppercase font-black">Interros</TableHead>
+                  <TableHead className="text-center bg-blue-50/30 text-[10px] md:text-xs uppercase font-black">Interrogations</TableHead>
                   <TableHead className="text-center bg-orange-50/30 text-[10px] md:text-xs uppercase font-black">Devoirs</TableHead>
                   <TableHead className="w-16 md:w-24 text-center font-black text-[10px] md:text-xs uppercase">Moy.</TableHead>
                   <TableHead className="text-right pr-4 md:pr-6 text-[10px] md:text-xs uppercase font-black">État</TableHead>
@@ -149,7 +149,7 @@ export function GradeManager({ user }: { user: User }) {
                 {students.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic text-xs md:text-sm">
-                      Sélectionnez une classe pour commencer.
+                      Aucun élève trouvé dans cette classe.
                     </TableCell>
                   </TableRow>
                 ) : (
