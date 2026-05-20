@@ -134,7 +134,7 @@ export function GradeManager({ user }: { user: User }) {
                   <TableHead className="text-center">Interrogations</TableHead>
                   <TableHead className="text-center">Devoirs</TableHead>
                   <TableHead className="w-24 text-center font-black">Moy.</TableHead>
-                  <TableHead className="text-right pr-6">Bulletin</TableHead>
+                  <TableHead className="text-right pr-6">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -185,13 +185,13 @@ export function GradeManager({ user }: { user: User }) {
                         <div className="flex justify-end gap-2">
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg hover:bg-emerald-50">
+                              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg hover:bg-emerald-50" title="Voir Bulletin">
                                 <Eye className="w-4 h-4 text-emerald-600" />
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                               <DialogHeader>
-                                <DialogTitle>Prévisualisation Bulletin : {student.name}</DialogTitle>
+                                <DialogTitle>Bulletin Prévisionnel : {student.name}</DialogTitle>
                               </DialogHeader>
                               <StudentGradeView student={student} />
                             </DialogContent>

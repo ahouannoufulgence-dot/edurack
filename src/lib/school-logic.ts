@@ -10,7 +10,7 @@
 export function calculateMoyenneComplex(
   interros: (number | null)[], 
   devoirs: (number | null)[], 
-  composition?: number | null // Conservé pour compatibilité mais ignoré
+  composition?: number | null // Paramètre ignoré désormais
 ): number {
   const validInterros = interros.filter(n => n !== null && !isNaN(n as number)) as number[];
   const validDevoirs = devoirs.filter(n => n !== null && !isNaN(n as number)) as number[];
@@ -25,12 +25,12 @@ export function calculateMoyenneComplex(
     ? validDevoirs.reduce((a, b) => a + b, 0) / validDevoirs.length 
     : 0;
 
-  // Calcul final : moyenne des deux types de notes
+  // Si on a les deux types de notes, on fait la moyenne des deux
   if (validInterros.length > 0 && validDevoirs.length > 0) {
     return parseFloat(((mi + md) / 2).toFixed(2));
   }
   
-  // Si un seul type est présent, on prend cette moyenne seule
+  // Sinon on retourne la moyenne de l'un ou de l'autre
   return parseFloat((mi || md).toFixed(2));
 }
 
