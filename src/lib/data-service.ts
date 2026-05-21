@@ -96,15 +96,9 @@ export function closeAcademicYear(currentYear: string, nextYear: string) {
   );
 }
 
-/**
- * Récupère le coefficient d'une matière. 
- * Par défaut, retourne 0 comme demandé. Le Directeur doit les configurer.
- */
 export function getCoefficient(classLevel: string, subjectId: string): number {
   const coeffs = getFromStorage<CoefficientEntry>(KEYS.COEFFS);
   const customEntry = coeffs.find(c => c.classLevel === classLevel && c.subjectId === subjectId);
-  
-  // Retourne la valeur personnalisée ou 0 par défaut
   return customEntry ? customEntry.value : 0;
 }
 
@@ -148,8 +142,22 @@ export function registerUser(data: {
   };
 
   saveToStorage(KEYS.USERS, [...users, newUser]);
-  createAuditLog(finalId, fullName, 'STUDENT_ADD', `Création manuelle du compte ${finalId}`);
+  createAuditLog(finalId, fullName, 'STUDENT_ADD', `Création du compte ${finalId}`);
   return finalId;
+}
+
+export function deleteStudent(studentId: string) {
+  const users = getFromStorage<User>(KEYS.USERS);
+  const updatedUsers = users.filter(u => u.id !== studentId);
+  saveToStorage(KEYS.USERS, updatedUsers);
+  
+  const grades = getFromStorage<GradeRecord>(KEYS.GRADES);
+  saveToStorage(KEYS.GRADES, grades.filter(g => g.eleveId !== studentId));
+  
+  const payments = getFromStorage<PaymentRecord>(KEYS.PAYMENTS);
+  saveToStorage(KEYS.PAYMENTS, payments.filter(p => p.eleveId !== studentId));
+
+  createAuditLog('SYSTEM', 'Directeur', 'STUDENT_DELETE', `Suppression définitive de l'élève ${studentId}`, null, null, 'high');
 }
 
 export function addStudent(data: any) {

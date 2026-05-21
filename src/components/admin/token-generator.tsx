@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -8,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClassLevel, ActivationToken, ALL_CLASSES } from "@/lib/school-types";
 import { generateBulkTokens, getTokens, deleteToken } from "@/lib/activation";
-import { ShieldCheck, Download, Printer, PlusCircle, CheckCircle, Clock, Zap, FileText, Trash2 } from "lucide-react";
+import { Printer, PlusCircle, CheckCircle, Clock, Zap, FileText, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -124,16 +125,17 @@ export function TokenGenerator() {
         <div>
           <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
             <Zap className="w-6 h-6 text-emerald-600 fill-emerald-600" />
-            Provisionnement des Identifiants
+            Gestion des Inscriptions
           </h2>
-          <p className="text-xs md:text-sm text-muted-foreground">Générez et gérez les codes d'accès uniques pour vos élèves.</p>
+          <p className="text-xs md:text-sm text-muted-foreground">Provisionnez et gérez les identifiants d'activation.</p>
         </div>
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <Button 
             onClick={handleDownloadWord} 
             className="flex-1 md:flex-none gap-2 h-12 rounded-xl bg-emerald-700 hover:bg-emerald-800 font-bold shadow-lg text-white"
+            data-ai-hint="download word"
           >
-            <FileText className="w-4 h-4" /> Télécharger (Word)
+            <FileText className="w-4 h-4" /> Télécharger (Fichier Word)
           </Button>
           <Button variant="outline" className="flex-1 md:flex-none gap-2 h-12 rounded-xl font-bold border-emerald-200 text-emerald-700">
             <Printer className="w-4 h-4" /> Imprimer
@@ -147,7 +149,7 @@ export function TokenGenerator() {
             <div className="space-y-2 w-full sm:w-48">
               <label className="text-[10px] font-black uppercase text-slate-500">Classe cible</label>
               <Select value={selectedClass} onValueChange={v => setSelectedClass(v as ClassLevel)}>
-                <SelectTrigger className="w-full bg-white h-11 rounded-xl">
+                <SelectTrigger className="w-full bg-white h-11 rounded-xl shadow-sm border-none">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -163,12 +165,12 @@ export function TokenGenerator() {
                 type="number" 
                 value={count} 
                 onChange={e => setCount(parseInt(e.target.value))} 
-                className="w-full bg-white h-11 rounded-xl"
+                className="w-full bg-white h-11 rounded-xl shadow-sm border-none"
                 min={1} max={100}
               />
             </div>
             <Button onClick={handleGenerate} className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 gap-2 h-11 px-8 rounded-xl shadow-lg font-bold">
-              <PlusCircle className="w-4 h-4" /> Générer
+              <PlusCircle className="w-4 h-4" /> Générer les codes
             </Button>
           </div>
         </CardContent>
@@ -176,15 +178,15 @@ export function TokenGenerator() {
 
       <Card className="border-none shadow-xl overflow-hidden bg-white">
         <CardHeader className="border-b p-4 md:p-6 bg-slate-50/50">
-          <CardTitle className="text-base md:text-lg">Registre des Codes - {selectedClass}</CardTitle>
-          <CardDescription className="text-xs">Identifiants disponibles ou activés pour cette classe. Supprimez les codes inutilisés si besoin.</CardDescription>
+          <CardTitle className="text-base md:text-lg">Registre des Inscriptions - {selectedClass}</CardTitle>
+          <CardDescription className="text-xs">Codes uniques à distribuer aux élèves pour leur première connexion.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-white">
                 <TableRow>
-                  <TableHead className="pl-6 py-4">ID de Connexion</TableHead>
+                  <TableHead className="pl-6 py-4">ID / Identifiant</TableHead>
                   <TableHead>Propriétaire</TableHead>
                   <TableHead>État</TableHead>
                   <TableHead className="text-right pr-6">Action</TableHead>
@@ -204,9 +206,9 @@ export function TokenGenerator() {
                       <TableCell className="font-bold text-xs">{token.studentName}</TableCell>
                       <TableCell>
                         {token.status === 'activated' ? (
-                          <Badge className="bg-emerald-600 gap-1 rounded-full text-[9px]"><CheckCircle className="w-2 h-2" /> Activé</Badge>
+                          <Badge className="bg-emerald-600 gap-1 rounded-full text-[9px] px-3"><CheckCircle className="w-2 h-2" /> Activé</Badge>
                         ) : (
-                          <Badge variant="secondary" className="gap-1 rounded-full text-[9px] font-bold"><Clock className="w-2 h-2" /> Libre</Badge>
+                          <Badge variant="secondary" className="gap-1 rounded-full text-[9px] font-bold px-3"><Clock className="w-2 h-2" /> Disponible</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-right pr-6">
@@ -216,17 +218,24 @@ export function TokenGenerator() {
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="rounded-3xl">
+                          <AlertDialogContent className="rounded-3xl border-none shadow-2xl">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Supprimer l'identifiant ?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Cette action supprimera définitivement le code <b>{token.id}</b>. 
-                                {token.status === 'activated' && " Attention : cet identifiant est déjà rattaché à un compte élève."}
+                              <AlertDialogTitle className="text-xl font-black">Supprimer l'inscription ?</AlertDialogTitle>
+                              <AlertDialogDescription className="text-slate-500 py-2">
+                                Êtes-vous sûr de vouloir supprimer définitivement le code <b>{token.id}</b> ? 
+                                <br/><br/>
+                                {token.status === 'activated' ? (
+                                  <span className="text-red-600 font-bold bg-red-50 p-2 rounded-lg block text-xs">
+                                    Attention : Cet identifiant est déjà activé. Sa suppression pourrait empêcher l'élève de se connecter.
+                                  </span>
+                                ) : (
+                                  "Cette action retirera ce code de la liste des inscriptions disponibles."
+                                )}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(token.id)} className="bg-red-600 hover:bg-red-700 rounded-xl">
+                            <AlertDialogFooter className="gap-2">
+                              <AlertDialogCancel className="rounded-xl h-11 border-slate-200">Annuler</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(token.id)} className="bg-red-600 hover:bg-red-700 rounded-xl h-11 font-bold">
                                 Confirmer la suppression
                               </AlertDialogAction>
                             </AlertDialogFooter>

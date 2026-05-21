@@ -113,7 +113,7 @@ export type AuditLog = {
   timestamp: string;
   userId: string;
   userName: string;
-  action: 'LOGIN' | 'LOGOUT' | 'ACCESS_DENIED' | 'GRADE_UPDATE' | 'STUDENT_ADD' | 'PAYMENT_ADD' | 'ACCOUNT_ACTIVATION' | 'TOKEN_GENERATION' | 'SECURITY_ALERT' | 'LOCKOUT' | 'SYSTEM_RESET' | 'YEAR_CLOSURE';
+  action: 'LOGIN' | 'LOGOUT' | 'ACCESS_DENIED' | 'GRADE_UPDATE' | 'STUDENT_ADD' | 'STUDENT_DELETE' | 'PAYMENT_ADD' | 'ACCOUNT_ACTIVATION' | 'TOKEN_GENERATION' | 'TOKEN_DELETE' | 'SECURITY_ALERT' | 'LOCKOUT' | 'SYSTEM_RESET' | 'YEAR_CLOSURE';
   details: string;
   oldValue?: any;
   newValue?: any;
