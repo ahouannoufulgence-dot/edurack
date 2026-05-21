@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -94,7 +95,7 @@ export function GradeManager({ user }: { user: User }) {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
-            <FileEdit className="w-5 h-5 text-emerald-700" /> Saisie des Notes
+            <FileEdit className="w-5 h-5 text-emerald-800" /> Saisie des Notes (Sans Composition)
           </h2>
           <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider font-bold">
             Coeff. actuel : <span className="text-emerald-700">{getCoefficient(selectedClass, selectedSubject)}</span>
@@ -117,7 +118,7 @@ export function GradeManager({ user }: { user: User }) {
             <SelectTrigger className="bg-white h-11 w-44"><SelectValue /></SelectTrigger>
             <SelectContent>{SUBJECTS.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
           </Select>
-          <Button onClick={handleSaveAll} className="bg-emerald-700 hover:bg-emerald-800 h-11 px-8 rounded-xl font-bold shadow-md">
+          <Button onClick={handleSaveAll} className="bg-emerald-800 hover:bg-emerald-900 h-11 px-8 rounded-xl font-bold shadow-md text-white">
             <Save className="w-4 h-4 mr-2" /> Enregistrer tout
           </Button>
         </div>

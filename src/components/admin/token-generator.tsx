@@ -132,7 +132,7 @@ export function TokenGenerator() {
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <Button 
             onClick={handleDownloadWord} 
-            className="flex-1 md:flex-none gap-2 h-12 rounded-xl bg-emerald-700 hover:bg-emerald-800 font-bold shadow-lg text-white"
+            className="flex-1 md:flex-none gap-2 h-12 rounded-xl bg-emerald-800 hover:bg-emerald-900 font-bold shadow-lg text-white"
           >
             <FileText className="w-4 h-4" /> Télécharger (Fichier Word)
           </Button>
@@ -168,7 +168,7 @@ export function TokenGenerator() {
                 min={1} max={100}
               />
             </div>
-            <Button onClick={handleGenerate} className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 gap-2 h-11 px-8 rounded-xl shadow-lg font-bold">
+            <Button onClick={handleGenerate} className="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 gap-2 h-11 px-8 rounded-xl shadow-lg font-bold">
               <PlusCircle className="w-4 h-4" /> Générer les codes
             </Button>
           </div>
@@ -219,7 +219,7 @@ export function TokenGenerator() {
                           </AlertDialogTrigger>
                           <AlertDialogContent className="rounded-3xl border-none shadow-2xl">
                             <AlertDialogHeader>
-                              <AlertDialogTitle className="text-xl font-black">Supprimer l'inscription ?</AlertDialogTitle>
+                              <AlertDialogTitle className="text-xl font-black text-slate-800">Supprimer l'identifiant ?</AlertDialogTitle>
                               <AlertDialogDescription className="text-slate-500 py-2">
                                 Êtes-vous sûr de vouloir supprimer définitivement le code <b>{token.id}</b> ? 
                                 <br/><br/>
@@ -234,7 +234,7 @@ export function TokenGenerator() {
                             </AlertDialogHeader>
                             <AlertDialogFooter className="gap-2">
                               <AlertDialogCancel className="rounded-xl h-11 border-slate-200">Annuler</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(token.id)} className="bg-red-600 hover:bg-red-700 rounded-xl h-11 font-bold">
+                              <AlertDialogAction onClick={() => handleDelete(token.id)} className="bg-red-600 hover:bg-red-700 rounded-xl h-11 font-bold text-white">
                                 Confirmer la suppression
                               </AlertDialogAction>
                             </AlertDialogFooter>

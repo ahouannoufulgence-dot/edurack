@@ -21,7 +21,7 @@ import { UserGuide } from '@/components/dashboard/user-guide';
 import { User } from '@/lib/school-types';
 import { StudentGradeView } from '@/components/grades/student-grade-view';
 
-// Augmentation du timeout pour les actions serveur sur mobile
+// Augmentation du timeout pour les actions serveur sur mobile et environnements cloud
 export const maxDuration = 60;
 
 export default function HomePage() {
@@ -52,7 +52,7 @@ export default function HomePage() {
       case 'dashboard':
         return (
           <div className="space-y-8 animate-in fade-in duration-700">
-            <div className="bg-emerald-deep p-6 md:p-10 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
+            <div className="bg-emerald-900 p-6 md:p-10 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
                <div className="relative z-10">
                   <h1 className="text-3xl md:text-5xl font-black tracking-tighter mb-2">Bienvenue, {user.nom} 👋</h1>
                   <p className="text-emerald-50/80 text-sm md:text-lg font-medium max-w-xl leading-relaxed">
@@ -92,7 +92,7 @@ export default function HomePage() {
         return (
           <div className="space-y-6">
             <h2 className="text-3xl font-bold flex items-center gap-3">
-              <span className="bg-emerald-deep text-white p-2 rounded-xl text-xs">AI</span>
+              <span className="bg-emerald-900 text-white p-2 rounded-xl text-xs">AI</span>
               Analyse de Remédiation
             </h2>
             {selectedStudentForAI ? (
@@ -102,9 +102,9 @@ export default function HomePage() {
                 <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center text-4xl">🤖</div>
                 <div className="max-w-md">
                   <h3 className="text-xl font-bold text-slate-800">Aucun élève sélectionné</h3>
-                  <p className="text-slate-500 mt-2">Recherchez un élève dans la barre de recherche en haut ou sélectionnez-en un dans le module "Élèves" pour générer un bilan.</p>
+                  <p className="text-slate-500 mt-2">Recherchez un élève dans la barre de recherche ou via le module "Élèves" pour générer un bilan.</p>
                 </div>
-                <button onClick={() => setActiveModule('students')} className="bg-emerald-deep text-white px-8 py-3 rounded-xl font-bold">Voir la liste des élèves</button>
+                <button onClick={() => setActiveModule('students')} className="bg-emerald-900 text-white px-8 py-3 rounded-xl font-bold">Voir la liste des élèves</button>
               </div>
             )}
           </div>

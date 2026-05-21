@@ -52,19 +52,18 @@ export function StudentManager() {
       nom: newStudent.nom.toUpperCase(),
       prenom: newStudent.prenom,
       classLevel: newStudent.classeId,
-      sexe: newStudent.sexe,
-      paymentStatus: 'A jour'
+      sexe: newStudent.sexe
     });
     
     setStudents(getFromStorage<User>('edutrack_users').filter(u => u.role === 'Eleve'));
     setNewStudent({ nom: "", prenom: "", classeId: "3e 1", sexe: "M" });
-    toast({ title: "Élève ajouté", description: "L'identifiant a été généré avec succès." });
+    toast({ title: "Élève ajouté", description: "L'identifiant a été généré." });
   };
 
   const handleDelete = (id: string) => {
     deleteStudent(id);
     setStudents(getFromStorage<User>('edutrack_users').filter(u => u.role === 'Eleve'));
-    toast({ title: "Élève supprimé", description: "Le compte et les données associées ont été effacés." });
+    toast({ title: "Élève supprimé", description: "Le compte a été effacé." });
   };
 
   const filtered = students.filter(s => {
@@ -77,7 +76,7 @@ export function StudentManager() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h2 className="text-2xl font-bold flex items-center gap-2">
-          <GraduationCap className="w-6 h-6 text-emerald-700" /> Gestion des Élèves
+          <GraduationCap className="w-6 h-6 text-emerald-800" /> Gestion des Élèves
         </h2>
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <div className="relative flex-1 md:flex-none">
@@ -109,7 +108,7 @@ export function StudentManager() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase text-slate-500">Nom</label>
-              <Input value={newStudent.nom} onChange={setNewStudent.bind(null, (s: any) => ({...s, nom: s.target.value}))} className="h-10 rounded-xl" />
+              <Input value={newStudent.nom} onChange={e => setNewStudent({...newStudent, nom: e.target.value.toUpperCase()})} className="h-10 rounded-xl" />
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase text-slate-500">Prénom</label>
@@ -124,7 +123,7 @@ export function StudentManager() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleAdd} className="w-full bg-emerald-700 h-11 rounded-xl gap-2 font-bold shadow-md">
+            <Button onClick={handleAdd} className="w-full bg-emerald-800 hover:bg-emerald-900 h-11 rounded-xl gap-2 font-bold shadow-md text-white">
               <UserPlus className="w-4 h-4" /> Enregistrer l'élève
             </Button>
           </CardContent>
@@ -157,7 +156,7 @@ export function StudentManager() {
                           </AlertDialogTrigger>
                           <AlertDialogContent className="rounded-3xl border-none shadow-2xl">
                             <AlertDialogHeader>
-                              <AlertDialogTitle className="text-xl font-black">Supprimer le compte élève ?</AlertDialogTitle>
+                              <AlertDialogTitle className="text-xl font-black text-slate-800">Supprimer le compte élève ?</AlertDialogTitle>
                               <AlertDialogDescription className="text-slate-500 py-2">
                                 Êtes-vous sûr de vouloir supprimer définitivement l'élève <b>{student.name}</b> ({student.id}) ? 
                                 <br/><br/>
@@ -168,7 +167,7 @@ export function StudentManager() {
                             </AlertDialogHeader>
                             <AlertDialogFooter className="gap-2">
                               <AlertDialogCancel className="rounded-xl h-11 border-slate-200">Annuler</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(student.id)} className="bg-red-600 hover:bg-red-700 rounded-xl h-11 font-bold">
+                              <AlertDialogAction onClick={() => handleDelete(student.id)} className="bg-red-600 hover:bg-red-700 rounded-xl h-11 font-bold text-white">
                                 Confirmer la suppression
                               </AlertDialogAction>
                             </AlertDialogFooter>
