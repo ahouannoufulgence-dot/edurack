@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -27,6 +26,8 @@ import { ChevronRight, Filter, BrainCircuit, ShieldCheck, Lock } from 'lucide-re
 import { getCurrentUser } from '@/lib/auth-service';
 import { getFromStorage } from '@/lib/data-service';
 import { useRouter } from 'next/navigation';
+
+export const maxDuration = 60; // Autorise 60 secondes pour les analyses IA
 
 export default function EduTrackApp() {
   const [activeModule, setActiveModule] = useState('dashboard');
