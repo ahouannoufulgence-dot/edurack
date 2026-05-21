@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Logique de calcul des moyennes "Zéro Composition".
  * Règle d'excellence : 40% Moyenne des Interros + 60% Moyenne des Devoirs.
@@ -18,7 +17,7 @@ export function calculateMoyenneComplex(interros: (number | null)[], devoirs: (n
     ? validDevoirs.reduce((a, b) => a + b, 0) / validDevoirs.length 
     : null;
 
-  // Calcul pondéré strict
+  // Calcul pondéré strict : 40/60
   if (avgInterros !== null && avgDevoirs !== null) {
     return (avgInterros * 0.4) + (avgDevoirs * 0.6);
   }

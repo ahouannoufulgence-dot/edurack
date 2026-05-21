@@ -8,9 +8,7 @@ import {
   PaymentRecord, 
   AbsenceRecord, 
   DisciplineRecord, 
-  ALL_CLASSES, 
   CoefficientEntry, 
-  EmploiDuTemps, 
   ArchiveData 
 } from './school-types';
 
