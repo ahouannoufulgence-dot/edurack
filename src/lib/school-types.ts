@@ -38,7 +38,6 @@ export type GradeRecord = {
   trimestre: 'T1' | 'T2' | 'T3';
   interros: (number | null)[];
   devoirs: (number | null)[];
-  composition?: number | null;
   moyenne: number;
   coefficient: number;
   dateAjout: string;

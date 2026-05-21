@@ -1,7 +1,8 @@
+
 {
   "name": "EduTrack Pro",
   "short_name": "EduTrack",
-  "description": "Gestion Scolaire Intégrée - Bénin",
+  "description": "Gestion scolaire moderne pour établissements au Bénin",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

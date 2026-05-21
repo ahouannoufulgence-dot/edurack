@@ -1,5 +1,6 @@
+
 /**
- * Calcule la moyenne d'une matière selon le système sans composition :
+ * Calcule la moyenne d'une matière selon le système simplifié (sans composition) :
  * Moyenne Interrogations (MI) = somme des interros / nombre d'interros saisies
  * Moyenne Devoirs (MD) = somme des devoirs / nombre de devoirs saisis
  * Moyenne Trimestrielle = (MI + MD) / 2
@@ -8,8 +9,7 @@
  */
 export function calculateMoyenneComplex(
   interros: (number | null)[], 
-  devoirs: (number | null)[], 
-  composition?: number | null // Paramètre ignoré désormais
+  devoirs: (number | null)[]
 ): number {
   const validInterros = interros.filter(n => n !== null && !isNaN(n as number)) as number[];
   const validDevoirs = devoirs.filter(n => n !== null && !isNaN(n as number)) as number[];
