@@ -14,7 +14,7 @@ export default function ResetPage() {
         </div>
         <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Projet Supprimé</h1>
         <p className="text-slate-500 leading-relaxed">
-          Le projet EduTrack a été entièrement effacé. Le système est maintenant prêt pour une nouvelle configuration.
+          L'application a été entièrement effacée. Le système est maintenant vide et prêt pour une nouvelle configuration.
         </p>
         <div className="pt-6">
           <Button onClick={() => window.location.reload()} className="bg-slate-900 hover:bg-slate-800 h-12 px-8 rounded-xl font-bold gap-2">
