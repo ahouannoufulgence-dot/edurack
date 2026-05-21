@@ -1,4 +1,3 @@
-
 import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
@@ -12,8 +11,6 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#1A6B4A',
     orientation: 'portrait',
     lang: 'fr',
-    scope: '/',
-    id: 'edutrack-pro',
     icons: [
       {
         src: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=192&h=192&auto=format&fit=crop',

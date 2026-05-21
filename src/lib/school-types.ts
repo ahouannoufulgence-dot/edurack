@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Définitions des types de données pour EduTrack Pro.
  */
@@ -41,7 +40,6 @@ export interface User {
   classLevel?: ClassLevel;
   matieresAttribuees?: string[];
   password?: string;
-  photoProfil?: string;
   statutCompte: 'actif' | 'inactif' | 'suspendu';
   dateCreation: string;
 }
@@ -97,7 +95,6 @@ export interface PaymentRecord {
   montant: number;
   datePaiement: string;
   typePaiement: string;
-  resteAPayer?: number;
 }
 
 export interface AuditLog {

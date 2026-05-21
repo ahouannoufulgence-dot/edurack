@@ -1,13 +1,9 @@
 
 /**
- * @fileOverview Logique de calcul des moyennes scolaires pour le Bénin.
+ * @fileOverview Logique de calcul des moyennes "Zéro Composition".
+ * Règle d'excellence : 40% Moyenne des Interros + 60% Moyenne des Devoirs.
  */
 
-/**
- * Calcule la moyenne sans composition.
- * Règle stricte : 40% Interros + 60% Devoirs.
- * S'il n'y a que des interros ou que des devoirs, on fait la moyenne simple des notes présentes.
- */
 export function calculateMoyenneComplex(interros: (number | null)[], devoirs: (number | null)[]) {
   const validInterros = interros.filter((n): n is number => n !== null);
   const validDevoirs = devoirs.filter((n): n is number => n !== null);
@@ -22,11 +18,11 @@ export function calculateMoyenneComplex(interros: (number | null)[], devoirs: (n
     ? validDevoirs.reduce((a, b) => a + b, 0) / validDevoirs.length 
     : null;
 
+  // Calcul pondéré strict
   if (avgInterros !== null && avgDevoirs !== null) {
-    // Pondération officielle béninoise
     return (avgInterros * 0.4) + (avgDevoirs * 0.6);
   }
   
-  // S'il ne manque qu'un groupe, on prend la moyenne de l'autre
+  // Si un groupe est totalement absent, on utilise l'autre groupe (tolérance pour début de trimestre)
   return avgInterros ?? avgDevoirs ?? 0;
 }

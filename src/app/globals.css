@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -26,7 +25,6 @@
     --ring: 154 61% 26%;
     --radius: 1rem;
 
-    /* Sidebar Variables */
     --sidebar-background: 154 61% 15%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 154 61% 26%;
@@ -39,9 +37,7 @@
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -53,7 +49,7 @@
 
 @keyframes zoom-slow {
   from { transform: scale(1); }
-  to { transform: scale(1.1); }
+  to { transform: scale(1.05); }
 }
 
 .animate-zoom-slow {

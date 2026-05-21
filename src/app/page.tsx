@@ -2,8 +2,8 @@
 import HomeClient from '@/components/dashboard/home-client';
 
 /**
- * Configuration du segment de route (Server Side).
- * Indispensable pour éviter l'erreur 500 et autoriser les timeouts longs pour l'IA.
+ * Configuration Serveur pour Next.js 15.
+ * maxDuration est indispensable pour les flux IA lents sur mobile.
  */
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';

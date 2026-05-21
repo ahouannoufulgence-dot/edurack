@@ -2,14 +2,14 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClassLevel, ActivationToken, ALL_CLASSES } from "@/lib/school-types";
 import { generateBulkTokens, getTokens, deleteToken } from "@/lib/activation";
-import { Printer, PlusCircle, CheckCircle, Clock, Zap, FileText, Trash2 } from "lucide-react";
+import { FileText, PlusCircle, CheckCircle, Clock, Trash2, ShieldAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -34,201 +34,158 @@ export function TokenGenerator() {
     setTokens(getTokens());
   }, []);
 
-  const refreshTokens = () => {
-    setTokens(getTokens());
-  };
-
   const handleGenerate = () => {
     generateBulkTokens(selectedClass, count);
-    refreshTokens();
-    toast({
-      title: "Identifiants générés",
-      description: `${count} codes créés pour la classe ${selectedClass}.`
-    });
+    setTokens(getTokens());
+    toast({ title: "Codes générés", description: `${count} identifiants sécurisés créés pour la ${selectedClass}.` });
   };
 
-  const handleDeleteToken = (id: string) => {
+  const handleDelete = (id: string) => {
     deleteToken(id);
-    refreshTokens();
-    toast({
-      variant: "destructive",
-      title: "Supprimé",
-      description: `L'identifiant ${id} a été retiré.`
-    });
+    setTokens(getTokens());
+    toast({ title: "Code supprimé", description: "L'identifiant a été invalidé avec succès." });
   };
 
   const handleDownloadWord = () => {
     const classTokens = tokens.filter(t => t.classLevel === selectedClass);
     if (classTokens.length === 0) {
-      toast({ variant: "destructive", title: "Erreur", description: "Aucun identifiant pour cette classe." });
+      toast({ variant: "destructive", title: "Aucune donnée", description: "Veuillez d'abord générer des codes pour cette classe." });
       return;
     }
 
     const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><meta charset='utf-8'><title>EduTrack Pro - Identifiants</title>
+      <head><meta charset='utf-8'><title>EduTrack Pro - Liste d'Activation</title>
       <style>
-        table { border-collapse: collapse; width: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        table { border-collapse: collapse; width: 100%; font-family: 'Segoe UI', sans-serif; }
         th, td { border: 1px solid #1A6B4A; padding: 12px; text-align: left; }
-        th { background-color: #1A6B4A; color: white; }
-        h1 { color: #1A6B4A; text-align: center; }
+        th { background-color: #1A6B4A; color: white; text-transform: uppercase; font-size: 12px; }
+        .title { text-align: center; color: #1A6B4A; margin-bottom: 20px; }
       </style>
-      </head><body>`;
-    
-    const tableHtml = `
-      <h1>LISTE D'ACTIVATION - CLASSE ${selectedClass}</h1>
+      </head><body>
+      <div class="title">
+        <h1>ÉCOLE VISION EXCELLENCE</h1>
+        <h2>LISTE D'ACTIVATION DES COMPTES - CLASSE ${selectedClass}</h2>
+      </div>
       <table>
-        <thead>
-          <tr>
-            <th>IDENTIFIANT UNIQUE</th>
-            <th>NOM DE L'ÉLÈVE (À REMPLIR)</th>
-            <th>STATUT</th>
-          </tr>
-        </thead>
+        <thead><tr><th>CODE D'ACTIVATION</th><th>NOM DE L'ÉLÈVE</th><th>STATUT</th></tr></thead>
         <tbody>
-          ${classTokens.map(t => `
-            <tr>
-              <td><b>${t.id}</b></td>
-              <td>${t.studentName === 'Libre - Prêt pour activation' ? '____________________' : t.studentName}</td>
-              <td>${t.status === 'activated' ? 'ACTIVÉ' : 'DISPONIBLE'}</td>
-            </tr>
-          `).join('')}
+          ${classTokens.map(t => `<tr><td style="font-family: monospace; font-weight: bold; font-size: 14px;">${t.id}</td><td>___________________________</td><td>${t.status === 'activated' ? 'DÉJÀ ACTIVÉ' : 'À REMETTRE'}</td></tr>`).join('')}
         </tbody>
       </table>
-    `;
-
-    const source = header + tableHtml + "</body></html>";
-    const blob = new Blob(['\ufeff', source], { type: 'application/msword' });
+      <p style="margin-top: 30px; font-style: italic; font-size: 10px;">Document généré par EduTrack Pro - Système Anti-Fraude</p>
+      </body></html>`;
+    
+    const blob = new Blob(['\ufeff', header], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Identifiants_${selectedClass.replace(/\s+/g, '_')}.doc`;
+    link.download = `Identifiants_${selectedClass.replace(/\s+/g, '_')}_EduTrack.doc`;
     link.click();
-    URL.revokeObjectURL(url);
-    toast({ title: "Succès", description: "Fichier Word généré." });
+    toast({ title: "Export Word réussi", description: "La liste est prête à être imprimée." });
   };
 
-  const currentClassTokens = tokens.filter(t => t.classLevel === selectedClass);
+  const filtered = tokens.filter(t => t.classLevel === selectedClass);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-emerald-100">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-emerald-100">
         <div>
-          <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
-            <Zap className="w-6 h-6 text-emerald-600 fill-emerald-600" />
-            Inscriptions & Identifiants
+          <h2 className="text-2xl font-bold flex items-center gap-2 text-emerald-900">
+            <PlusCircle className="w-7 h-7" /> Gestion des Inscriptions
           </h2>
-          <p className="text-xs text-muted-foreground">Gérez les codes de première connexion.</p>
+          <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Identifiants de Première Connexion</p>
         </div>
-        <div className="flex flex-wrap gap-2 w-full md:w-auto">
-          <Button 
-            onClick={handleDownloadWord} 
-            className="flex-1 md:flex-none gap-2 h-12 rounded-xl bg-emerald-800 hover:bg-emerald-900 font-bold shadow-lg text-white"
-          >
-            <FileText className="w-4 h-4" /> Télécharger (Word)
-          </Button>
-          <Button variant="outline" className="flex-1 md:flex-none gap-2 h-12 rounded-xl font-bold border-emerald-200 text-emerald-700">
-            <Printer className="w-4 h-4" /> Imprimer
-          </Button>
-        </div>
+        <Button onClick={handleDownloadWord} className="bg-emerald-800 hover:bg-emerald-900 h-11 rounded-xl font-bold gap-2 w-full sm:w-auto text-white shadow-lg">
+          <FileText className="w-4 h-4" /> Télécharger (Word)
+        </Button>
       </div>
 
-      <Card className="border-none shadow-md bg-emerald-50/50">
-        <CardContent className="p-4 md:p-6">
-          <div className="flex flex-col sm:flex-row items-end gap-4">
-            <div className="space-y-2 w-full sm:w-48">
-              <label className="text-[10px] font-black uppercase text-slate-500">Classe cible</label>
-              <Select value={selectedClass} onValueChange={v => setSelectedClass(v as ClassLevel)}>
-                <SelectTrigger className="w-full bg-white h-11 rounded-xl shadow-sm border-none">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ALL_CLASSES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2 w-full sm:w-32">
-              <label className="text-[10px] font-black uppercase text-slate-500">Quantité</label>
-              <Input 
-                type="number" 
-                value={count} 
-                onChange={e => setCount(parseInt(e.target.value))} 
-                className="w-full bg-white h-11 rounded-xl shadow-sm border-none"
-                min={1} max={100}
-              />
-            </div>
-            <Button onClick={handleGenerate} className="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 gap-2 h-11 px-8 rounded-xl shadow-lg font-bold">
-              <PlusCircle className="w-4 h-4" /> Générer
-            </Button>
+      <Card className="border-none shadow-md bg-emerald-50/50 rounded-[2rem]">
+        <CardContent className="p-6 flex flex-col md:flex-row items-end gap-4">
+          <div className="space-y-2 flex-1 w-full">
+            <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Classe Cible</label>
+            <Select value={selectedClass} onValueChange={v => setSelectedClass(v as ClassLevel)}>
+              <SelectTrigger className="bg-white h-11 rounded-xl border-emerald-100"><SelectValue /></SelectTrigger>
+              <SelectContent>{ALL_CLASSES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+            </Select>
           </div>
+          <div className="space-y-2 w-full md:w-32">
+            <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Quantité</label>
+            <Input type="number" value={count} onChange={e => setCount(parseInt(e.target.value))} className="bg-white h-11 rounded-xl border-emerald-100" />
+          </div>
+          <Button onClick={handleGenerate} className="bg-emerald-700 hover:bg-emerald-800 h-11 px-8 rounded-xl font-bold w-full md:w-auto shadow-lg text-white">
+            Générer les Codes
+          </Button>
         </CardContent>
       </Card>
 
-      <Card className="border-none shadow-xl overflow-hidden bg-white">
-        <CardHeader className="bg-slate-50/50">
-          <CardTitle className="text-lg">Registre des Codes - {selectedClass}</CardTitle>
-          <CardDescription className="text-xs">Identifiants à remettre aux élèves pour leur activation.</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="pl-6 py-4">ID de Connexion</TableHead>
-                  <TableHead>Propriétaire</TableHead>
-                  <TableHead>État</TableHead>
-                  <TableHead className="text-right pr-6">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentClassTokens.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-12 text-muted-foreground italic text-xs">
-                      Aucun identifiant disponible.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  currentClassTokens.map((token) => (
-                    <TableRow key={token.id} className="hover:bg-emerald-50/20">
-                      <TableCell className="pl-6 font-mono font-bold text-emerald-700 text-xs">{token.id}</TableCell>
-                      <TableCell className="font-bold text-xs">{token.studentName}</TableCell>
-                      <TableCell>
-                        {token.status === 'activated' ? (
-                          <Badge className="bg-emerald-600 gap-1 rounded-full text-[9px] px-3"><CheckCircle className="w-2 h-2" /> Activé</Badge>
-                        ) : (
-                          <Badge variant="secondary" className="gap-1 rounded-full text-[9px] font-bold px-3"><Clock className="w-2 h-2" /> Prêt</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right pr-6">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="rounded-3xl border-none shadow-2xl">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-xl font-black">Supprimer l'identifiant ?</AlertDialogTitle>
-                              <AlertDialogDescription className="text-slate-500 py-2">
+      <Card className="border-none shadow-xl overflow-hidden bg-white rounded-[2.5rem]">
+        <Table>
+          <TableHeader className="bg-slate-50">
+            <TableRow>
+              <TableHead className="pl-8">Code de Sécurité</TableHead>
+              <TableHead>Propriétaire</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead className="text-right pr-8">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic">
+                  Aucun code généré pour cette classe.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map(token => (
+                <TableRow key={token.id} className="hover:bg-emerald-50/20 group">
+                  <TableCell className="pl-8 font-mono font-bold text-emerald-700 text-sm">{token.id}</TableCell>
+                  <TableCell className="font-bold text-xs text-slate-600">{token.studentName}</TableCell>
+                  <TableCell>
+                    {token.status === 'activated' ? (
+                      <Badge className="bg-emerald-600 text-white gap-1 px-3 border-none">
+                        <CheckCircle className="w-3 h-3" /> Activé
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="bg-slate-100 text-slate-500 gap-1 px-3 border-none">
+                        <Clock className="w-3 h-3" /> En attente
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right pr-8">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-red-300 hover:text-red-600 hover:bg-red-50 rounded-xl">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-xl font-black text-slate-800">Invalider ce code ?</AlertDialogTitle>
+                          <AlertDialogDescription className="space-y-4 pt-2">
+                            <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex gap-3 text-red-800">
+                              <ShieldAlert className="w-6 h-6 shrink-0" />
+                              <p className="text-sm font-medium">
                                 Êtes-vous sûr de vouloir supprimer définitivement le code <b>{token.id}</b> ? 
-                                Cette action est irréversible.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter className="gap-2">
-                              <AlertDialogCancel className="rounded-xl h-11">Annuler</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteToken(token.id)} className="bg-red-600 hover:bg-red-700 rounded-xl h-11 text-white">
-                                Confirmer la suppression
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
+                                Si ce code a été imprimé, il ne fonctionnera plus pour aucune inscription.
+                              </p>
+                            </div>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="gap-2 pt-4">
+                          <AlertDialogCancel className="rounded-xl h-11 border-slate-200">Annuler</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(token.id)} className="bg-red-600 hover:bg-red-700 rounded-xl h-11 text-white shadow-lg">
+                            Confirmer la suppression
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </Card>
     </div>
   );
