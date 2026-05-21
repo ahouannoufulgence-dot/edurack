@@ -109,7 +109,7 @@ export function StudentManager() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase text-slate-500">Nom</label>
-              <Input value={newStudent.nom} onChange={e => setNewStudent({...newStudent, nom: e.target.value})} className="h-10 rounded-xl" />
+              <Input value={newStudent.nom} onChange={setNewStudent.bind(null, (s: any) => ({...s, nom: s.target.value}))} className="h-10 rounded-xl" />
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase text-slate-500">Prénom</label>
