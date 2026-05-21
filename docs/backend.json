@@ -47,69 +47,6 @@
         "photo": { "type": "string" }
       }
     },
-    "Parent": {
-      "title": "Parent",
-      "type": "object",
-      "properties": {
-        "parentId": { "type": "string" },
-        "nom": { "type": "string" },
-        "prenom": { "type": "string" },
-        "telephone": { "type": "string" },
-        "email": { "type": "string" },
-        "profession": { "type": "string" },
-        "adresse": { "type": "string" },
-        "enfantsIds": { "type": "array", "items": { "type": "string" } }
-      }
-    },
-    "Enseignant": {
-      "title": "Enseignant",
-      "type": "object",
-      "properties": {
-        "enseignantId": { "type": "string" },
-        "nom": { "type": "string" },
-        "prenom": { "type": "string" },
-        "telephone": { "type": "string" },
-        "email": { "type": "string" },
-        "matieres": { "type": "array", "items": { "type": "string" } },
-        "classesAttribuees": { "type": "array", "items": { "type": "string" } },
-        "specialite": { "type": "string" },
-        "dateEmbauche": { "type": "string", "format": "date" }
-      }
-    },
-    "Classe": {
-      "title": "Classe",
-      "type": "object",
-      "properties": {
-        "classeId": { "type": "string" },
-        "nomClasse": { "type": "string" },
-        "niveau": { "type": "string" },
-        "effectif": { "type": "number" },
-        "professeurPrincipalId": { "type": "string" },
-        "anneeScolaire": { "type": "string" }
-      }
-    },
-    "Matiere": {
-      "title": "Matière",
-      "type": "object",
-      "properties": {
-        "matiereId": { "type": "string" },
-        "nom": { "type": "string" },
-        "coefficient": { "type": "number" },
-        "niveau": { "type": "string" },
-        "enseignantId": { "type": "string" }
-      }
-    },
-    "Coefficient": {
-      "title": "Paramètre de Coefficient",
-      "type": "object",
-      "properties": {
-        "coefficientId": { "type": "string" },
-        "matiereId": { "type": "string" },
-        "valeur": { "type": "number" },
-        "dateModification": { "type": "string", "format": "date-time" },
-        "auteurModification": { "type": "string" }
-      }
-    },
     "Note": {
       "title": "Note",
       "type": "object",
@@ -120,8 +57,8 @@
         "matiereId": { "type": "string" },
         "enseignantId": { "type": "string" },
         "trimestre": { "type": "string", "enum": ["T1", "T2", "T3"] },
-        "devoir": { "type": "number" },
-        "composition": { "type": "number" },
+        "interros": { "type": "array", "items": { "type": "number" } },
+        "devoirs": { "type": "array", "items": { "type": "number" } },
         "moyenne": { "type": "number" },
         "coefficient": { "type": "number" },
         "dateAjout": { "type": "string", "format": "date-time" }
@@ -153,18 +90,6 @@
         "auteur": { "type": "string" }
       }
     },
-    "Discipline": {
-      "title": "Incident Disciplinaire",
-      "type": "object",
-      "properties": {
-        "incidentId": { "type": "string" },
-        "eleveId": { "type": "string" },
-        "type": { "type": "string" },
-        "description": { "type": "string" },
-        "sanction": { "type": "string" },
-        "date": { "type": "string", "format": "date-time" }
-      }
-    },
     "Paiement": {
       "title": "Transaction de Paiement",
       "type": "object",
@@ -178,105 +103,6 @@
         "resteAPayer": { "type": "number" },
         "anneeScolaire": { "type": "string" }
       }
-    },
-    "EmploiDuTemps": {
-      "title": "Créneau Emploi du Temps",
-      "type": "object",
-      "properties": {
-        "edtId": { "type": "string" },
-        "classeId": { "type": "string" },
-        "jour": { "type": "string" },
-        "heureDebut": { "type": "string" },
-        "heureFin": { "type": "string" },
-        "matiereId": { "type": "string" },
-        "enseignantId": { "type": "string" },
-        "salle": { "type": "string" }
-      }
-    },
-    "Agenda": {
-      "title": "Événement Agenda",
-      "type": "object",
-      "properties": {
-        "agendaId": { "type": "string" },
-        "titre": { "type": "string" },
-        "description": { "type": "string" },
-        "date": { "type": "string", "format": "date" },
-        "cible": { "type": "string" },
-        "auteur": { "type": "string" }
-      }
-    },
-    "Messagerie": {
-      "title": "Message Interne",
-      "type": "object",
-      "properties": {
-        "messageId": { "type": "string" },
-        "expediteurId": { "type": "string" },
-        "destinataireId": { "type": "string" },
-        "message": { "type": "string" },
-        "date": { "type": "string", "format": "date-time" },
-        "lu": { "type": "boolean" }
-      }
-    },
-    "Notification": {
-      "title": "Notification Système",
-      "type": "object",
-      "properties": {
-        "notificationId": { "type": "string" },
-        "utilisateurId": { "type": "string" },
-        "titre": { "type": "string" },
-        "contenu": { "type": "string" },
-        "lu": { "type": "boolean" },
-        "date": { "type": "string", "format": "date-time" }
-      }
-    },
-    "HistoriqueConnexion": {
-      "title": "Log de Connexion",
-      "type": "object",
-      "properties": {
-        "connexionId": { "type": "string" },
-        "userId": { "type": "string" },
-        "appareil": { "type": "string" },
-        "ip": { "type": "string" },
-        "localisation": { "type": "string" },
-        "dateConnexion": { "type": "string", "format": "date-time" },
-        "statut": { "type": "string" }
-      }
-    },
-    "JournalAction": {
-      "title": "Audit d'Action",
-      "type": "object",
-      "properties": {
-        "actionId": { "type": "string" },
-        "auteurId": { "type": "string" },
-        "module": { "type": "string" },
-        "ancienneValeur": { "type": "string" },
-        "nouvelleValeur": { "type": "string" },
-        "date": { "type": "string", "format": "date-time" }
-      }
-    },
-    "Parametre": {
-      "title": "Configuration Système",
-      "type": "object",
-      "properties": {
-        "nomEtablissement": { "type": "string" },
-        "logo": { "type": "string" },
-        "devise": { "type": "string" },
-        "telephone": { "type": "string" },
-        "email": { "type": "string" },
-        "anneeScolaire": { "type": "string" },
-        "systemeNotation": { "type": "string" },
-        "couleursApplication": { "type": "object" }
-      }
-    },
-    "QrVerification": {
-      "title": "Vérification QR",
-      "type": "object",
-      "properties": {
-        "qrId": { "type": "string" },
-        "bulletinId": { "type": "string" },
-        "dateVerification": { "type": "string", "format": "date-time" },
-        "statutAuthenticite": { "type": "boolean" }
-      }
     }
   },
   "auth": {
@@ -285,23 +111,9 @@
   "firestore": {
     "/users/{userId}": { "schema": "User", "description": "Comptes utilisateurs." },
     "/eleves/{eleveId}": { "schema": "Eleve", "description": "Dossiers élèves." },
-    "/parents/{parentId}": { "schema": "Parent", "description": "Dossiers parents." },
-    "/enseignants/{enseignantId}": { "schema": "Enseignant", "description": "Dossiers enseignants." },
-    "/classes/{classeId}": { "schema": "Classe", "description": "Structure des classes." },
-    "/matieres/{matiereId}": { "schema": "Matiere", "description": "Référentiel des matières." },
-    "/coefficients/{coeffId}": { "schema": "Coefficient", "description": "Configuration des coefficients." },
     "/notes/{noteId}": { "schema": "Note", "description": "Notes individuelles." },
     "/bulletins/{bulletinId}": { "schema": "Bulletin", "description": "Archives des bulletins." },
     "/absences/{absenceId}": { "schema": "Absence", "description": "Suivi des présences." },
-    "/discipline/{incidentId}": { "schema": "Discipline", "description": "Suivi disciplinaire." },
-    "/paiements/{paiementId}": { "schema": "Paiement", "description": "Transactions financières." },
-    "/emploiDuTemps/{edtId}": { "schema": "EmploiDuTemps", "description": "Grilles horaires." },
-    "/agenda/{agendaId}": { "schema": "Agenda", "description": "Événements scolaires." },
-    "/messagerie/{msgId}": { "schema": "Messagerie", "description": "Messages internes." },
-    "/notifications/{notifId}": { "schema": "Notification", "description": "Alertes système." },
-    "/historiqueConnexions/{connId}": { "schema": "HistoriqueConnexion", "description": "Logs de sécurité." },
-    "/journalActions/{actionId}": { "schema": "JournalAction", "description": "Audit système." },
-    "/parametres/{paramId}": { "schema": "Parametre", "description": "Configuration globale." },
-    "/qrVerifications/{qrId}": { "schema": "QrVerification", "description": "Logs anti-fraude." }
+    "/paiements/{paiementId}": { "schema": "Paiement", "description": "Transactions financières." }
   }
 }

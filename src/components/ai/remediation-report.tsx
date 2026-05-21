@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -63,8 +64,6 @@ export function RemediationReport({ student }: AIReportProps) {
         throw new Error("Les notes saisies sont insuffisantes pour générer une analyse.");
       }
 
-      // Appel au serveur avec gestion explicite du timeout via une promesse si nécessaire, 
-      // mais ici on compte sur Next.js 15
       const result = await generateRemediationReport({
         studentName: student.name,
         className: classLevel,
