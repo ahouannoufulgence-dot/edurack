@@ -1,24 +1,20 @@
 {
-  "name": "EduTrack Pro - Bénin",
-  "short_name": "EduTrack",
+  "nom": "EduTrack Pro - Bénin",
+  "nom_court": "EduTrack",
   "description": "Gestion scolaire moderne pour les établissements du Bénin",
   "start_url": "/",
-  "display": "standalone",
-  "background_color": "#1A6B4A",
-  "theme_color": "#1A6B4A",
-  "orientation": "portrait",
-  "lang": "fr",
-  "scope": "/",
-  "id": "edutrack-pro",
-  "icons": [
+  "afficher": "autonome",
+  "couleur_arrière-plan": "#1A6B4A",
+  "thème_couleur": "#1A6B4A",
+  "icônes": [
     {
       "src": "https://picsum.photos/seed/edutrack-192/192/192",
-      "sizes": "192x192",
+      "tailles": "192x192",
       "type": "image/png"
     },
     {
       "src": "https://picsum.photos/seed/edutrack-512/512/512",
-      "sizes": "512x512",
+      "tailles": "512x512",
       "type": "image/png"
     }
   ]
