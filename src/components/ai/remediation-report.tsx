@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -63,7 +64,8 @@ export function RemediationReport({ student }: AIReportProps) {
         throw new Error("Les notes saisies sont insuffisantes pour générer une analyse.");
       }
 
-      // Appel au serveur avec timeout géré par Next.js
+      // Appel au serveur avec gestion explicite du timeout via une promesse si nécessaire, 
+      // mais ici on compte sur Next.js 15
       const result = await generateRemediationReport({
         studentName: student.name,
         className: classLevel,
@@ -71,7 +73,7 @@ export function RemediationReport({ student }: AIReportProps) {
         academicPerformances
       });
       
-      if (!result) throw new Error("Le serveur IA est surchargé. Veuillez réessayer dans quelques instants.");
+      if (!result) throw new Error("Le service d'IA n'a pas renvoyé de réponse. Réessayez.");
       
       setReport(result);
       toast({ title: "Analyse terminée", description: "Le rapport pédagogique a été généré avec succès." });
@@ -79,7 +81,7 @@ export function RemediationReport({ student }: AIReportProps) {
       console.error("Erreur IA:", error);
       toast({ 
         variant: 'destructive', 
-        title: 'Erreur de serveur IA', 
+        title: 'Erreur d\'analyse', 
         description: error.message || "La connexion avec le serveur d'intelligence artificielle a échoué."
       });
     } finally {

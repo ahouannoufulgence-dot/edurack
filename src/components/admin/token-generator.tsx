@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -38,6 +39,7 @@ export function TokenGenerator() {
       return;
     }
 
+    // Génération du contenu Word (HTML compatible .doc)
     const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head><meta charset='utf-8'><title>Export Word EduTrack</title>
       <style>
@@ -95,7 +97,8 @@ export function TokenGenerator() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* HEADER AVEC BOUTON TÉLÉCHARGEMENT WORD BIEN VISIBLE */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border">
         <div>
           <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
             <Zap className="w-6 h-6 text-emerald-600 fill-emerald-600" />
@@ -106,11 +109,11 @@ export function TokenGenerator() {
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <Button 
             onClick={handleDownloadWord} 
-            className="flex-1 md:flex-none gap-2 h-12 rounded-xl bg-emerald-700 hover:bg-emerald-800 font-bold shadow-lg text-xs md:text-sm"
+            className="flex-1 md:flex-none gap-2 h-12 rounded-xl bg-emerald-700 hover:bg-emerald-800 font-bold shadow-lg text-white"
           >
             <FileText className="w-4 h-4" /> Télécharger (Fichier Word)
           </Button>
-          <Button variant="outline" className="flex-1 md:flex-none gap-2 h-12 rounded-xl font-bold text-xs">
+          <Button variant="outline" className="flex-1 md:flex-none gap-2 h-12 rounded-xl font-bold border-emerald-200 text-emerald-700">
             <Printer className="w-4 h-4" /> Imprimer
           </Button>
         </div>
