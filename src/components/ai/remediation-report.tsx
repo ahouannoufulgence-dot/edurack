@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -29,7 +28,7 @@ export function RemediationReport({ student }: AIReportProps) {
       const classLevel = student.classLevel || 'N/A';
 
       if (studentGrades.length === 0) {
-        throw new Error("Aucune note trouvée pour cet élève. Veuillez d'abord saisir des notes dans le module 'Notes'.");
+        throw new Error("Aucune note trouvée. Veuillez d'abord saisir des notes dans le module 'Notes'.");
       }
 
       const trimesters = ['T1', 'T2', 'T3'] as const;
@@ -60,7 +59,11 @@ export function RemediationReport({ student }: AIReportProps) {
         };
       }).filter(p => p.subjects.length > 0);
 
-      // Appel au serveur avec timeout géré par Next.js (configuré à 60s)
+      if (academicPerformances.length === 0) {
+        throw new Error("Les notes saisies sont insuffisantes pour générer une analyse.");
+      }
+
+      // Appel au serveur avec timeout géré par Next.js
       const result = await generateRemediationReport({
         studentName: student.name,
         className: classLevel,
@@ -68,7 +71,7 @@ export function RemediationReport({ student }: AIReportProps) {
         academicPerformances
       });
       
-      if (!result) throw new Error("Le serveur n'a renvoyé aucun résultat. Veuillez réessayer.");
+      if (!result) throw new Error("Le serveur IA est surchargé. Veuillez réessayer dans quelques instants.");
       
       setReport(result);
       toast({ title: "Analyse terminée", description: "Le rapport pédagogique a été généré avec succès." });
@@ -77,7 +80,7 @@ export function RemediationReport({ student }: AIReportProps) {
       toast({ 
         variant: 'destructive', 
         title: 'Erreur de serveur IA', 
-        description: error.message || "La connexion avec le serveur d'intelligence artificielle a échoué. Vérifiez votre connexion internet."
+        description: error.message || "La connexion avec le serveur d'intelligence artificielle a échoué."
       });
     } finally {
       setLoading(false);
@@ -88,7 +91,7 @@ export function RemediationReport({ student }: AIReportProps) {
     if (!report) return;
 
     setIsDownloading(true);
-    toast({ title: "Génération PDF", description: "Votre rapport est en préparation..." });
+    toast({ title: "Génération PDF", description: "Préparation du document..." });
 
     try {
       const { jsPDF } = await import('jspdf');
@@ -148,7 +151,7 @@ export function RemediationReport({ student }: AIReportProps) {
           </div>
 
           <div style="margin-top: 50px; text-align: right; border-top: 1px solid #eee; padding-top: 20px;">
-            <p style="font-size: 10px; color: #94a3b8; font-style: italic; margin: 0;">Généré par EduTrack Pro IA</p>
+            <p style="font-size: 10px; color: #94a3b8; font-style: italic; margin: 0;">Document généré automatiquement - EduTrack Pro</p>
           </div>
         </div>
       `;
@@ -180,19 +183,19 @@ export function RemediationReport({ student }: AIReportProps) {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 w-full max-w-4xl mx-auto">
+    <div className="space-y-4 md:space-y-6 w-full max-w-4xl mx-auto px-2 md:px-0">
       {!report ? (
         <Card className="border-dashed border-2 bg-emerald-50/30 overflow-hidden shadow-none">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto bg-emerald-deep/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
               <BrainCircuit className="w-8 h-8 text-emerald-deep" />
             </div>
-            <CardTitle className="text-xl">Analyste Pédagogique IA</CardTitle>
-            <CardDescription>Bilan de remédiation basé sur les résultats réels de {student.name}.</CardDescription>
+            <CardTitle className="text-lg md:text-xl">Analyste Pédagogique IA</CardTitle>
+            <CardDescription className="text-xs md:text-sm">Bilan de remédiation basé sur les résultats réels de {student.name}.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4 px-4 pb-8">
-            <div className="text-sm text-center text-muted-foreground leading-relaxed">
-              L'IA examine chaque moyenne par matière pour proposer des solutions concrètes de réussite.
+            <div className="text-xs md:text-sm text-center text-muted-foreground leading-relaxed max-w-md">
+              L'IA examine chaque moyenne pour proposer des solutions concrètes de réussite. Assurez-vous d'avoir saisi des notes.
             </div>
             <Button 
               onClick={handleGenerate} 
@@ -200,7 +203,7 @@ export function RemediationReport({ student }: AIReportProps) {
               className="bg-emerald-deep hover:bg-emerald-deep/90 h-12 px-8 rounded-full font-bold shadow-lg gap-2 w-full md:w-auto"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-              {loading ? "Calcul du rapport..." : "Lancer l'Analyse IA"}
+              {loading ? "Calcul en cours..." : "Lancer l'Analyse IA"}
             </Button>
           </CardContent>
         </Card>
@@ -209,62 +212,62 @@ export function RemediationReport({ student }: AIReportProps) {
           <CardHeader className="bg-emerald-deep text-white p-6 md:p-8">
             <div className="flex justify-between items-start">
               <div className="space-y-1">
-                <CardTitle className="text-xl md:text-2xl font-black">{report.title}</CardTitle>
-                <CardDescription className="text-emerald-50/80 font-medium">Analyse certifiée par EduTrack Pro</CardDescription>
+                <CardTitle className="text-lg md:text-2xl font-black">{report.title}</CardTitle>
+                <CardDescription className="text-emerald-50/80 font-medium text-xs md:text-sm">Analyse certifiée par EduTrack Pro</CardDescription>
               </div>
-              <FileCheck className="w-8 h-8 text-emerald-100 hidden sm:block" />
+              <FileCheck className="w-6 h-6 md:w-8 md:h-8 text-emerald-100 shrink-0" />
             </div>
           </CardHeader>
-          <CardContent className="p-6 md:p-8 space-y-8">
-            <section className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-              <h4 className="text-xs font-black text-emerald-deep uppercase tracking-widest flex items-center gap-2 mb-3">
-                <ArrowRight className="w-4 h-4" /> Bilan Global
+          <CardContent className="p-4 md:p-8 space-y-6 md:space-y-8">
+            <section className="bg-slate-50 p-4 md:p-6 rounded-2xl border border-slate-100">
+              <h4 className="text-[10px] md:text-xs font-black text-emerald-deep uppercase tracking-widest flex items-center gap-2 mb-3">
+                <ArrowRight className="w-3 h-3 md:w-4 md:h-4" /> Bilan Global
               </h4>
-              <p className="text-sm md:text-base text-slate-700 leading-relaxed italic">
+              <p className="text-xs md:text-base text-slate-700 leading-relaxed italic">
                 "{report.overallAssessment}"
               </p>
             </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <section className="bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100/50">
-                <h4 className="font-black text-emerald-800 text-xs uppercase tracking-widest mb-4">Points Forts</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <section className="bg-emerald-50/50 p-4 md:p-6 rounded-2xl border border-emerald-100/50">
+                <h4 className="font-black text-emerald-800 text-[10px] md:text-xs uppercase tracking-widest mb-4">Points Forts</h4>
                 <ul className="space-y-3">
                   {report.strengths.map((s, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-emerald-900">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
+                    <li key={i} className="flex items-start gap-2 text-xs md:text-sm text-emerald-900">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                       <span className="font-medium">{s}</span>
                     </li>
                   ))}
                 </ul>
               </section>
 
-              <section className="bg-orange-50/50 p-6 rounded-2xl border border-orange-100/50">
-                <h4 className="font-black text-orange-800 text-xs uppercase tracking-widest mb-4">À Améliorer</h4>
+              <section className="bg-orange-50/50 p-4 md:p-6 rounded-2xl border border-orange-100/50">
+                <h4 className="font-black text-orange-800 text-[10px] md:text-xs uppercase tracking-widest mb-4">À Améliorer</h4>
                 <div className="space-y-4">
                   {report.areasForImprovement.map((area, i) => (
                     <div key={i} className="space-y-1">
-                      <p className="text-sm font-bold text-orange-900">{area.subject}</p>
-                      <p className="text-xs text-orange-800/80 leading-relaxed">{area.details}</p>
+                      <p className="text-xs md:text-sm font-bold text-orange-900">{area.subject}</p>
+                      <p className="text-[10px] md:text-xs text-orange-800/80 leading-relaxed">{area.details}</p>
                     </div>
                   ))}
                 </div>
               </section>
             </div>
 
-            <section className="bg-slate-50 p-6 rounded-2xl border border-dashed border-slate-300">
-              <h4 className="font-black text-slate-900 text-xs uppercase tracking-widest mb-3">Conseils de Réussite</h4>
-              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{report.generalRecommendations}</p>
+            <section className="bg-slate-50 p-4 md:p-6 rounded-2xl border border-dashed border-slate-300">
+              <h4 className="font-black text-slate-900 text-[10px] md:text-xs uppercase tracking-widest mb-3">Conseils de Réussite</h4>
+              <p className="text-xs md:text-sm text-slate-700 leading-relaxed whitespace-pre-line">{report.generalRecommendations}</p>
             </section>
           </CardContent>
-          <CardFooter className="bg-slate-50/50 p-6 border-t flex flex-col sm:flex-row gap-3 justify-between items-center">
-            <Button variant="ghost" onClick={() => setReport(null)} className="text-xs font-bold text-slate-500 hover:text-emerald-deep">
+          <CardFooter className="bg-slate-50/50 p-4 md:p-6 border-t flex flex-col sm:flex-row gap-3 justify-between items-center">
+            <Button variant="ghost" onClick={() => setReport(null)} className="text-[10px] md:text-xs font-bold text-slate-500 hover:text-emerald-deep">
               Réanalyser
             </Button>
             <Button 
               variant="default" 
               onClick={handleDownloadPdf} 
               disabled={isDownloading} 
-              className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl h-11 px-8 font-bold shadow-md w-full sm:w-auto gap-2"
+              className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl h-11 px-8 font-bold shadow-md w-full sm:w-auto gap-2 text-xs"
             >
               {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               {isDownloading ? "Génération..." : "Télécharger le Rapport PDF"}
