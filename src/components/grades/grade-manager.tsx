@@ -95,10 +95,10 @@ export function GradeManager({ user }: { user: User }) {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
-            <FileEdit className="w-5 h-5 text-emerald-800" /> Saisie des Notes (Sans Composition)
+            <FileEdit className="w-5 h-5 text-emerald-800" /> Saisie des Notes
           </h2>
-          <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider font-bold">
-            Coeff. actuel : <span className="text-emerald-700">{getCoefficient(selectedClass, selectedSubject)}</span>
+          <p className="text-[10px] text-muted-foreground uppercase font-bold">
+            Moyenne = (Interros * 0.4) + (Devoirs * 0.6)
           </p>
         </div>
         <div className="flex flex-wrap gap-2 w-full lg:w-auto">
@@ -131,10 +131,10 @@ export function GradeManager({ user }: { user: User }) {
               <TableHeader className="bg-slate-50">
                 <TableRow>
                   <TableHead className="pl-6 py-4 w-64">Élève</TableHead>
-                  <TableHead className="text-center">Interrogations</TableHead>
-                  <TableHead className="text-center">Devoirs</TableHead>
+                  <TableHead className="text-center">Interrogations (x3)</TableHead>
+                  <TableHead className="text-center">Devoirs (x3)</TableHead>
                   <TableHead className="w-24 text-center font-black">Moy.</TableHead>
-                  <TableHead className="text-right pr-6">Actions</TableHead>
+                  <TableHead className="text-right pr-6">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -145,10 +145,10 @@ export function GradeManager({ user }: { user: User }) {
                   const moy = calculateMoyenneComplex(interros, devoirs);
 
                   return (
-                    <TableRow key={student.id} className="hover:bg-emerald-50/30">
+                    <TableRow key={student.id} className="hover:bg-emerald-50/20">
                       <TableCell className="pl-6 py-3">
                         <p className="font-bold text-slate-800 uppercase">{student.name}</p>
-                        <p className="text-[10px] font-mono text-muted-foreground">{student.id}</p>
+                        <p className="text-[10px] text-muted-foreground">{student.id}</p>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1 justify-center">
@@ -157,7 +157,7 @@ export function GradeManager({ user }: { user: User }) {
                               key={idx} type="number" 
                               value={s.interros[idx]} 
                               onChange={e => handleScoreChange(student.id, 'interros', idx, e.target.value)}
-                              className="w-12 h-9 text-center p-1 border rounded-md focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
+                              className="w-12 h-9 text-center p-1 border rounded-md text-xs focus:ring-1 focus:ring-emerald-500 outline-none"
                               placeholder={`I${idx+1}`}
                             />
                           ))}
@@ -170,7 +170,7 @@ export function GradeManager({ user }: { user: User }) {
                               key={idx} type="number" 
                               value={s.devoirs[idx]} 
                               onChange={e => handleScoreChange(student.id, 'devoirs', idx, e.target.value)}
-                              className="w-12 h-9 text-center p-1 border rounded-md focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
+                              className="w-12 h-9 text-center p-1 border rounded-md text-xs focus:ring-1 focus:ring-emerald-500 outline-none"
                               placeholder={`D${idx+1}`}
                             />
                           ))}
@@ -182,26 +182,19 @@ export function GradeManager({ user }: { user: User }) {
                         </span>
                       </TableCell>
                       <TableCell className="text-right pr-6">
-                        <div className="flex justify-end gap-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg hover:bg-emerald-50" title="Voir Bulletin">
-                                <Eye className="w-4 h-4 text-emerald-600" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle>Bulletin Prévisionnel : {student.name}</DialogTitle>
-                              </DialogHeader>
-                              <StudentGradeView student={student} />
-                            </DialogContent>
-                          </Dialog>
-                          {moy > 0 ? (
-                             <CheckCircle className="w-4 h-4 text-emerald-500 my-auto" />
-                          ) : (
-                             <Info className="w-4 h-4 text-slate-300 my-auto" />
-                          )}
-                        </div>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                              <Eye className="w-4 h-4 text-emerald-600" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl h-[90vh]">
+                            <DialogHeader>
+                              <DialogTitle>Aperçu du Bulletin : {student.name}</DialogTitle>
+                            </DialogHeader>
+                            <StudentGradeView student={student} />
+                          </DialogContent>
+                        </Dialog>
                       </TableCell>
                     </TableRow>
                   );

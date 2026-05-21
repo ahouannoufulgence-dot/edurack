@@ -6,14 +6,23 @@ import { User, GradeRecord, PaymentRecord, AbsenceRecord, DisciplineRecord, ALL_
 
 export function getFromStorage<T>(key: string): T[] {
   if (typeof window === 'undefined') return [];
-  const data = localStorage.getItem(key);
-  return data ? JSON.parse(data) : [];
+  try {
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : [];
+  } catch (e) {
+    console.error(`Error reading ${key} from storage:`, e);
+    return [];
+  }
 }
 
 export function saveToStorage<T>(key: string, data: T[]) {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(key, JSON.stringify(data));
-    window.dispatchEvent(new Event('storage'));
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {
+      console.error(`Error saving ${key} to storage:`, e);
+    }
   }
 }
 
@@ -31,6 +40,7 @@ export function getActiveYear(): string {
 export function setActiveYear(year: string) {
   if (typeof window !== 'undefined') {
     localStorage.setItem('edutrack_active_year', year);
+    window.dispatchEvent(new Event('storage'));
   }
 }
 
@@ -102,7 +112,6 @@ export function deleteStudent(id: string) {
   const users = getFromStorage<User>('edutrack_users').filter(u => u.id !== id);
   saveToStorage('edutrack_users', users);
   
-  // Nettoyage des données associées
   const grades = getFromStorage<GradeRecord>('edutrack_grades').filter(g => g.eleveId !== id);
   saveToStorage('edutrack_grades', grades);
   
@@ -206,7 +215,6 @@ export function closeAcademicYear(currentYear: string, nextYear: string) {
   
   saveToStorage('edutrack_archives', archives);
   
-  // Promotion et Reset
   const promotedUsers = users.map(u => {
     if (u.role === 'Eleve' && u.classLevel) {
       const idx = ALL_CLASSES.indexOf(u.classLevel);

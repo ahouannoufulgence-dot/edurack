@@ -57,13 +57,13 @@ export function StudentManager() {
     
     setStudents(getFromStorage<User>('edutrack_users').filter(u => u.role === 'Eleve'));
     setNewStudent({ nom: "", prenom: "", classeId: "3e 1", sexe: "M" });
-    toast({ title: "Élève ajouté", description: "L'identifiant a été généré." });
+    toast({ title: "Élève ajouté" });
   };
 
   const handleDelete = (id: string) => {
     deleteStudent(id);
     setStudents(getFromStorage<User>('edutrack_users').filter(u => u.role === 'Eleve'));
-    toast({ title: "Élève supprimé", description: "Le compte a été effacé." });
+    toast({ title: "Élève supprimé", description: "Le compte et les données associées ont été effacés." });
   };
 
   const filtered = students.filter(s => {
@@ -103,7 +103,7 @@ export function StudentManager() {
       <div className="grid lg:grid-cols-4 gap-6">
         <Card className="lg:col-span-1 border-none shadow-md h-fit">
           <CardHeader>
-            <CardTitle className="text-xs font-black uppercase tracking-widest text-emerald-700">Inscription Rapide</CardTitle>
+            <CardTitle className="text-xs font-black uppercase text-emerald-700">Inscription Rapide</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -123,8 +123,8 @@ export function StudentManager() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleAdd} className="w-full bg-emerald-800 hover:bg-emerald-900 h-11 rounded-xl gap-2 font-bold shadow-md text-white">
-              <UserPlus className="w-4 h-4" /> Enregistrer l'élève
+            <Button onClick={handleAdd} className="w-full bg-emerald-800 hover:bg-emerald-900 h-11 rounded-xl gap-2 font-bold text-white">
+              <UserPlus className="w-4 h-4" /> Enregistrer
             </Button>
           </CardContent>
         </Card>
@@ -133,9 +133,9 @@ export function StudentManager() {
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-slate-50/50">
+                <TableHeader>
                   <TableRow>
-                    <TableHead className="pl-6 py-4">ID / Identifiant</TableHead>
+                    <TableHead className="pl-6 py-4">ID Élève</TableHead>
                     <TableHead>Nom & Prénom</TableHead>
                     <TableHead>Classe</TableHead>
                     <TableHead className="text-right pr-6">Actions</TableHead>
@@ -143,7 +143,7 @@ export function StudentManager() {
                 </TableHeader>
                 <TableBody>
                   {filtered.map((student) => (
-                    <TableRow key={student.id} className="hover:bg-emerald-50/20 transition-colors">
+                    <TableRow key={student.id} className="hover:bg-emerald-50/20">
                       <TableCell className="pl-6 font-mono font-bold text-emerald-700 text-xs">{student.id}</TableCell>
                       <TableCell className="font-bold text-sm">{student.name}</TableCell>
                       <TableCell><Badge variant="outline" className="rounded-full px-3">{student.classLevel}</Badge></TableCell>
@@ -156,18 +156,18 @@ export function StudentManager() {
                           </AlertDialogTrigger>
                           <AlertDialogContent className="rounded-3xl border-none shadow-2xl">
                             <AlertDialogHeader>
-                              <AlertDialogTitle className="text-xl font-black text-slate-800">Supprimer le compte élève ?</AlertDialogTitle>
+                              <AlertDialogTitle className="text-xl font-black">Supprimer l'élève ?</AlertDialogTitle>
                               <AlertDialogDescription className="text-slate-500 py-2">
-                                Êtes-vous sûr de vouloir supprimer définitivement l'élève <b>{student.name}</b> ({student.id}) ? 
+                                Êtes-vous sûr de vouloir supprimer définitivement l'élève <b>{student.name}</b> ? 
                                 <br/><br/>
                                 <span className="text-red-600 font-bold bg-red-50 p-2 rounded-lg block text-xs">
-                                  Attention : Cette action effacera également toutes ses notes, ses paiements et son historique.
+                                  Attention : Toutes les notes, absences et paiements seront perdus.
                                 </span>
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter className="gap-2">
-                              <AlertDialogCancel className="rounded-xl h-11 border-slate-200">Annuler</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(student.id)} className="bg-red-600 hover:bg-red-700 rounded-xl h-11 font-bold text-white">
+                              <AlertDialogCancel className="rounded-xl h-11">Annuler</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(student.id)} className="bg-red-600 hover:bg-red-700 rounded-xl h-11 text-white">
                                 Confirmer la suppression
                               </AlertDialogAction>
                             </AlertDialogFooter>
@@ -178,8 +178,8 @@ export function StudentManager() {
                   ))}
                   {filtered.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic text-xs">
-                        Aucun élève trouvé.
+                      <TableCell colSpan={4} className="text-center py-12 text-muted-foreground italic text-xs">
+                        Aucun résultat.
                       </TableCell>
                     </TableRow>
                   )}

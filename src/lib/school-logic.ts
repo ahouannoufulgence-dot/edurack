@@ -4,9 +4,9 @@
  */
 
 /**
- * Calcule la moyenne sans case "Composition".
- * Règle : Moyenne des Interros (40%) + Moyenne des Devoirs (60%).
- * Si un groupe est vide, l'autre prend 100%.
+ * Calcule la moyenne sans composition.
+ * Règle stricte : 40% Interros + 60% Devoirs.
+ * S'il n'y a que des interros ou que des devoirs, on fait la moyenne simple des notes présentes.
  */
 export function calculateMoyenneComplex(interros: (number | null)[], devoirs: (number | null)[]) {
   const validInterros = interros.filter((n): n is number => n !== null);
@@ -23,8 +23,10 @@ export function calculateMoyenneComplex(interros: (number | null)[], devoirs: (n
     : null;
 
   if (avgInterros !== null && avgDevoirs !== null) {
+    // Pondération officielle béninoise
     return (avgInterros * 0.4) + (avgDevoirs * 0.6);
   }
   
+  // S'il ne manque qu'un groupe, on prend la moyenne de l'autre
   return avgInterros ?? avgDevoirs ?? 0;
 }
