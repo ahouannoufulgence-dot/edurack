@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -133,7 +132,6 @@ export function TokenGenerator() {
           <Button 
             onClick={handleDownloadWord} 
             className="flex-1 md:flex-none gap-2 h-12 rounded-xl bg-emerald-700 hover:bg-emerald-800 font-bold shadow-lg text-white"
-            data-ai-hint="download word"
           >
             <FileText className="w-4 h-4" /> Télécharger (Fichier Word)
           </Button>
