@@ -39,16 +39,18 @@ export default function HomeClient() {
     }
   }, [router]);
 
-  if (!isMounted || !user) {
+  if (!isMounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-pulse flex flex-col items-center gap-4">
           <div className="w-12 h-12 bg-emerald-200 rounded-2xl" />
-          <p className="text-emerald-800 font-bold text-xs uppercase tracking-widest">EduTrack Pro...</p>
+          <p className="text-emerald-800 font-bold text-xs uppercase tracking-widest">Initialisation sécurisée...</p>
         </div>
       </div>
     );
   }
+
+  if (!user) return null;
 
   const handleSearchSelect = (student: User) => {
     setSelectedStudentForAI(student);
