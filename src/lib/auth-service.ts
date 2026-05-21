@@ -9,14 +9,10 @@ export function getCurrentUser() {
 
 export function logout() {
   if (typeof window !== 'undefined') {
-    localStorage.removeItem('edutrack_session');
+    localStorage.clear();
   }
 }
 
-export function login(userId: string, pass: string) {
-  return { success: false, message: "Le système a été réinitialisé. Aucun compte disponible." };
-}
-
-export function initializeDemoUsers() {
-  // Aucune initialisation
+export function login() {
+  return { success: false, message: "Système réinitialisé." };
 }

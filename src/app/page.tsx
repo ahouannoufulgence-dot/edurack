@@ -12,13 +12,13 @@ export default function ResetPage() {
         <div className="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
           <Trash2 className="w-10 h-10 text-red-600" />
         </div>
-        <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Application Supprimée</h1>
+        <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Projet Supprimé</h1>
         <p className="text-slate-500 leading-relaxed">
-          Le contenu précédent a été effacé. Le système est maintenant prêt pour un nouveau projet.
+          Le projet EduTrack a été entièrement effacé. Le système est maintenant prêt pour une nouvelle configuration.
         </p>
         <div className="pt-6">
           <Button onClick={() => window.location.reload()} className="bg-slate-900 hover:bg-slate-800 h-12 px-8 rounded-xl font-bold gap-2">
-            <PlusCircle className="w-5 h-5" /> Nouveau départ
+            <PlusCircle className="w-5 h-5" /> Nouveau Projet
           </Button>
         </div>
       </div>

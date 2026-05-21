@@ -1,4 +1,5 @@
+
 import { config } from 'dotenv';
 config();
 
-import '@/ai/flows/generate-remediation-report.ts';
+// Les flux IA ont été supprimés.
