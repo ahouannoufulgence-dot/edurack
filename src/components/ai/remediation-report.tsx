@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -82,7 +81,7 @@ export function RemediationReport({ student }: AIReportProps) {
       toast({ 
         variant: 'destructive', 
         title: 'Erreur d\'analyse', 
-        description: error.message || "La connexion avec le serveur d'intelligence artificielle a échoué."
+        description: error.message || "La connexion avec le serveur d'intelligence artificielle a échoué. Veuillez réessayer sur une connexion stable."
       });
     } finally {
       setLoading(false);

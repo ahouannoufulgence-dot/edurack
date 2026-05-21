@@ -177,7 +177,7 @@ export function TokenGenerator() {
       <Card className="border-none shadow-xl overflow-hidden bg-white">
         <CardHeader className="border-b p-4 md:p-6 bg-slate-50/50">
           <CardTitle className="text-base md:text-lg">Registre des Codes - {selectedClass}</CardTitle>
-          <CardDescription className="text-xs">Identifiants disponibles ou activés pour cette classe.</CardDescription>
+          <CardDescription className="text-xs">Identifiants disponibles ou activés pour cette classe. Supprimez les codes inutilisés si besoin.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -200,7 +200,7 @@ export function TokenGenerator() {
                 ) : (
                   currentClassTokens.map((token) => (
                     <TableRow key={token.id} className="hover:bg-emerald-50/20 transition-colors">
-                      <TableCell className="pl-6 font-mono font-black text-emerald-700 text-xs">{token.id}</TableCell>
+                      <TableCell className="pl-6 font-mono font-bold text-emerald-700 text-xs">{token.id}</TableCell>
                       <TableCell className="font-bold text-xs">{token.studentName}</TableCell>
                       <TableCell>
                         {token.status === 'activated' ? (

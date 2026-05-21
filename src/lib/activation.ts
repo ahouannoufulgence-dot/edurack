@@ -10,6 +10,7 @@ export function getTokens(): ActivationToken[] {
 }
 
 export function resetTokens() {
+  if (typeof window === 'undefined') return;
   localStorage.removeItem(STORAGE_KEY);
   generateBulkTokens('3e 1', 10);
 }
@@ -43,6 +44,9 @@ export function generateBulkTokens(classLevel: ClassLevel, count: number): Activ
     const sequence = (lastIndex + i).toString().padStart(3, '0');
     const tokenId = `ELV-${classCode}-${sequence}`;
     
+    // Éviter les doublons
+    if (existingTokens.find(t => t.id === tokenId)) continue;
+
     newTokens.push({
       id: tokenId,
       studentName: `Libre - Prêt pour activation`,
