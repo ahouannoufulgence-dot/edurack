@@ -51,7 +51,7 @@ export function StudentManager() {
       name: `${newStudent.prenom} ${newStudent.nom}`.toUpperCase(),
       nom: newStudent.nom.toUpperCase(),
       prenom: newStudent.prenom,
-      classLevel: newStudent.classeId,
+      classLevel: newStudent.classeId as any,
       sexe: newStudent.sexe
     });
     

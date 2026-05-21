@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'EduTrack Pro',
     short_name: 'EduTrack',
-    description: 'Système Intégré de Gestion Scolaire - Vision Bénin',
+    description: 'Application de gestion scolaire Vision Bénin',
     start_url: '/',
     display: 'standalone',
     background_color: '#F1F7F4',
