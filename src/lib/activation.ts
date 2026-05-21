@@ -1,6 +1,5 @@
 import { ActivationToken, ClassLevel, User } from './school-types';
 import { createAuditLog } from './audit';
-import { syncIdentitySystem } from './identity-manager';
 
 const STORAGE_KEY = 'edutrack_activation_tokens';
 const USERS_KEY = 'edutrack_users';
@@ -15,19 +14,33 @@ export function resetTokens() {
   generateBulkTokens('3e 1', 10);
 }
 
+export function deleteToken(tokenId: string) {
+  const tokens = getTokens();
+  const updatedTokens = tokens.filter(t => t.id !== tokenId);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTokens));
+  
+  createAuditLog(
+    'SYSTEM', 
+    'Admin', 
+    'SECURITY_ALERT', 
+    `Suppression de l'identifiant d'activation : ${tokenId}`,
+    null,
+    null,
+    'medium'
+  );
+}
+
 export function generateBulkTokens(classLevel: ClassLevel, count: number): ActivationToken[] {
   const existingTokens = getTokens();
   const classCode = classLevel.replace(/\s/g, '').toUpperCase();
   
   const newTokens: ActivationToken[] = [];
   
-  // Trouver le dernier numéro pour cette classe pour continuer la suite
   const classTokens = existingTokens.filter(t => t.classLevel === classLevel);
   const lastIndex = classTokens.length;
 
   for (let i = 1; i <= count; i++) {
     const sequence = (lastIndex + i).toString().padStart(3, '0');
-    // Le code EST l'identifiant élève direct
     const tokenId = `ELV-${classCode}-${sequence}`;
     
     newTokens.push({
@@ -48,7 +61,7 @@ export function generateBulkTokens(classLevel: ClassLevel, count: number): Activ
     'SYSTEM', 
     'Admin', 
     'TOKEN_GENERATION', 
-    `Génération d'identifiants spontanés pour la classe ${classLevel}`,
+    `Génération de ${count} codes pour la classe ${classLevel}`,
     null,
     { classLevel, count },
     'medium'
@@ -62,14 +75,14 @@ export function verifyActivation(tokenId: string): { success: boolean; message: 
   const token = tokens.find(t => t.id.toUpperCase() === tokenId.toUpperCase());
   
   if (!token) {
-    return { success: false, message: "Cet identifiant n'est pas encore provisionné par l'établissement." };
+    return { success: false, message: "Identifiant inconnu ou non provisionné." };
   }
   
   if (token.status === 'activated') {
-    return { success: false, message: "Cet identifiant est déjà activé et rattaché à un compte." };
+    return { success: false, message: "Cet identifiant est déjà rattaché à un compte élève." };
   }
   
-  return { success: true, message: "Identifiant valide pour activation.", token };
+  return { success: true, message: "Code valide.", token };
 }
 
 export function completeActivation(tokenId: string, userData: { 
@@ -92,8 +105,6 @@ export function completeActivation(tokenId: string, userData: {
     
     const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
     const fullName = `${userData.prenom} ${userData.nom}`.toUpperCase();
-    
-    // On utilise EXACTEMENT l'ID du token comme ID de l'utilisateur
     const finalId = token.id;
 
     const newUser: User = {
@@ -116,17 +127,6 @@ export function completeActivation(tokenId: string, userData: {
     };
     
     localStorage.setItem(USERS_KEY, JSON.stringify([...users, newUser]));
-
-    createAuditLog(
-      finalId, 
-      fullName, 
-      'ACCOUNT_ACTIVATION', 
-      `Activation du compte ${finalId} terminée.`,
-      null,
-      null,
-      'medium'
-    );
-
     return finalId;
   }
   throw new Error("Identifiant introuvable");

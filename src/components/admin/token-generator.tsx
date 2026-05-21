@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -8,10 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClassLevel, ActivationToken, ALL_CLASSES } from "@/lib/school-types";
-import { generateBulkTokens, getTokens } from "@/lib/activation";
-import { ShieldCheck, Download, Printer, PlusCircle, CheckCircle, Clock, Zap, FileText } from "lucide-react";
+import { generateBulkTokens, getTokens, deleteToken } from "@/lib/activation";
+import { ShieldCheck, Download, Printer, PlusCircle, CheckCircle, Clock, Zap, FileText, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export function TokenGenerator() {
   const [tokens, setTokens] = useState<ActivationToken[]>([]);
@@ -23,12 +33,26 @@ export function TokenGenerator() {
     setTokens(getTokens());
   }, []);
 
+  const refreshTokens = () => {
+    setTokens(getTokens());
+  };
+
   const handleGenerate = () => {
     generateBulkTokens(selectedClass, count);
-    setTokens(getTokens());
+    refreshTokens();
     toast({
-      title: "Identifiants générés",
-      description: `${count} identifiants élèves créés pour la classe ${selectedClass}.`
+      title: "Codes générés",
+      description: `${count} nouveaux identifiants créés pour la classe ${selectedClass}.`
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    deleteToken(id);
+    refreshTokens();
+    toast({
+      variant: "destructive",
+      title: "Identifiant supprimé",
+      description: `Le code ${id} a été retiré du système.`
     });
   };
 
@@ -39,7 +63,6 @@ export function TokenGenerator() {
       return;
     }
 
-    // Génération du contenu Word (HTML compatible .doc)
     const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head><meta charset='utf-8'><title>Export Word EduTrack</title>
       <style>
@@ -97,21 +120,20 @@ export function TokenGenerator() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* HEADER AVEC BOUTON TÉLÉCHARGEMENT WORD BIEN VISIBLE */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-emerald-100">
         <div>
           <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
             <Zap className="w-6 h-6 text-emerald-600 fill-emerald-600" />
-            Identifiants de Connexion
+            Provisionnement des Identifiants
           </h2>
-          <p className="text-xs md:text-sm text-muted-foreground">Provisionnement des codes d'accès uniques pour vos élèves.</p>
+          <p className="text-xs md:text-sm text-muted-foreground">Générez et gérez les codes d'accès uniques pour vos élèves.</p>
         </div>
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <Button 
             onClick={handleDownloadWord} 
             className="flex-1 md:flex-none gap-2 h-12 rounded-xl bg-emerald-700 hover:bg-emerald-800 font-bold shadow-lg text-white"
           >
-            <FileText className="w-4 h-4" /> Télécharger (Fichier Word)
+            <FileText className="w-4 h-4" /> Télécharger (Word)
           </Button>
           <Button variant="outline" className="flex-1 md:flex-none gap-2 h-12 rounded-xl font-bold border-emerald-200 text-emerald-700">
             <Printer className="w-4 h-4" /> Imprimer
@@ -136,7 +158,7 @@ export function TokenGenerator() {
               </Select>
             </div>
             <div className="space-y-2 w-full sm:w-32">
-              <label className="text-[10px] font-black uppercase text-slate-500">Nombre de codes</label>
+              <label className="text-[10px] font-black uppercase text-slate-500">Quantité</label>
               <Input 
                 type="number" 
                 value={count} 
@@ -146,33 +168,33 @@ export function TokenGenerator() {
               />
             </div>
             <Button onClick={handleGenerate} className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 gap-2 h-11 px-8 rounded-xl shadow-lg font-bold">
-              <PlusCircle className="w-4 h-4" /> Générer les codes
+              <PlusCircle className="w-4 h-4" /> Générer
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-none shadow-lg overflow-hidden">
-        <CardHeader className="bg-white border-b p-4 md:p-6">
+      <Card className="border-none shadow-xl overflow-hidden bg-white">
+        <CardHeader className="border-b p-4 md:p-6 bg-slate-50/50">
           <CardTitle className="text-base md:text-lg">Registre des Codes - {selectedClass}</CardTitle>
-          <CardDescription className="text-xs">Liste exhaustive des identifiants pour cette classe.</CardDescription>
+          <CardDescription className="text-xs">Identifiants disponibles ou activés pour cette classe.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-slate-50/50">
+              <TableHeader className="bg-white">
                 <TableRow>
-                  <TableHead className="pl-6 py-4">Identifiant</TableHead>
-                  <TableHead>Élève</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="text-right pr-6">Date</TableHead>
+                  <TableHead className="pl-6 py-4">ID de Connexion</TableHead>
+                  <TableHead>Propriétaire</TableHead>
+                  <TableHead>État</TableHead>
+                  <TableHead className="text-right pr-6">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {currentClassTokens.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-12 text-muted-foreground italic text-xs">
-                      Aucun code généré pour la classe {selectedClass}.
+                      Aucun identifiant pour la classe {selectedClass}.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -184,11 +206,32 @@ export function TokenGenerator() {
                         {token.status === 'activated' ? (
                           <Badge className="bg-emerald-600 gap-1 rounded-full text-[9px]"><CheckCircle className="w-2 h-2" /> Activé</Badge>
                         ) : (
-                          <Badge variant="secondary" className="gap-1 rounded-full text-[9px]"><Clock className="w-2 h-2" /> Libre</Badge>
+                          <Badge variant="secondary" className="gap-1 rounded-full text-[9px] font-bold"><Clock className="w-2 h-2" /> Libre</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right pr-6 text-[10px] text-muted-foreground">
-                        {token.activatedAt ? new Date(token.activatedAt).toLocaleDateString('fr-BJ') : '--'}
+                      <TableCell className="text-right pr-6">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="rounded-3xl">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Supprimer l'identifiant ?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Cette action supprimera définitivement le code <b>{token.id}</b>. 
+                                {token.status === 'activated' && " Attention : cet identifiant est déjà rattaché à un compte élève."}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(token.id)} className="bg-red-600 hover:bg-red-700 rounded-xl">
+                                Confirmer la suppression
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </TableCell>
                     </TableRow>
                   ))
