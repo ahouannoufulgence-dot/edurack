@@ -1,7 +1,18 @@
+
 /**
- * @fileOverview Service de persistance des données.
+ * @fileOverview Service de persistance des données et logique métier.
  */
-import { User, GradeRecord, PaymentRecord, AbsenceRecord, DisciplineRecord, ALL_CLASSES, CoefficientEntry, EmploiDuTemps, ArchiveData } from './school-types';
+import { 
+  User, 
+  GradeRecord, 
+  PaymentRecord, 
+  AbsenceRecord, 
+  DisciplineRecord, 
+  ALL_CLASSES, 
+  CoefficientEntry, 
+  EmploiDuTemps, 
+  ArchiveData 
+} from './school-types';
 
 export function getFromStorage<T>(key: string): T[] {
   if (typeof window === 'undefined') return [];
@@ -27,6 +38,13 @@ export function getActiveYear(): string {
   return localStorage.getItem('edutrack_active_year') || "2025-2026";
 }
 
+export function setActiveYear(year: string) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('edutrack_active_year', year);
+    window.dispatchEvent(new Event('storage'));
+  }
+}
+
 export function saveGrade(grade: GradeRecord) {
   const grades = getFromStorage<GradeRecord>('edutrack_grades');
   const index = grades.findIndex(g => 
@@ -49,8 +67,8 @@ export function addStudent(studentData: Partial<User>) {
   const newStudent: User = {
     id,
     identifiant: id,
-    name: studentData.name || '',
-    nom: studentData.nom || '',
+    name: (studentData.name || '').toUpperCase(),
+    nom: (studentData.nom || '').toUpperCase(),
     prenom: studentData.prenom || '',
     role: 'Eleve',
     sexe: studentData.sexe || 'M',
@@ -67,6 +85,30 @@ export function deleteStudent(id: string) {
   saveToStorage('edutrack_users', users);
 }
 
+export function registerUser(userData: any): string {
+  const users = getFromStorage<User>('edutrack_users');
+  const prefix = userData.role === 'Directeur' ? 'DIR' : userData.role === 'Enseignant' ? 'ENS' : 'USR';
+  const id = `${prefix}-${Math.floor(100 + Math.random() * 899)}`;
+  
+  const newUser: User = {
+    id,
+    identifiant: id,
+    name: `${userData.prenom} ${userData.nom}`.toUpperCase(),
+    nom: userData.nom.toUpperCase(),
+    prenom: userData.prenom,
+    role: userData.role,
+    sexe: userData.sexe,
+    matieresAttribuees: userData.subjectId ? [userData.subjectId] : [],
+    password: userData.password,
+    statutCompte: 'actif',
+    dateCreation: new Date().toISOString()
+  };
+  
+  users.push(newUser);
+  saveToStorage('edutrack_users', users);
+  return id;
+}
+
 export function addPayment(payment: any) {
   const payments = getFromStorage<PaymentRecord>('edutrack_payments');
   payments.push({
@@ -75,6 +117,73 @@ export function addPayment(payment: any) {
     datePaiement: new Date().toISOString()
   });
   saveToStorage('edutrack_payments', payments);
+}
+
+export function addAbsence(absence: any) {
+  const absences = getFromStorage<AbsenceRecord>('edutrack_absences');
+  absences.push({
+    absenceId: `ABS-${Date.now()}`,
+    ...absence,
+    justifiee: false
+  });
+  saveToStorage('edutrack_absences', absences);
+}
+
+export function addIncident(incident: any) {
+  const incidents = getFromStorage<DisciplineRecord>('edutrack_discipline');
+  incidents.push({
+    incidentId: `INC-${Date.now()}`,
+    ...incident,
+    date: new Date().toISOString()
+  });
+  saveToStorage('edutrack_discipline', incidents);
+}
+
+export function closeAcademicYear(currentYear: string, nextYear: string) {
+  const archives = getFromStorage<ArchiveData>('edutrack_archives');
+  const users = getFromStorage<User>('edutrack_users');
+  const grades = getFromStorage<GradeRecord>('edutrack_grades');
+  
+  const newArchive: ArchiveData = {
+    year: currentYear,
+    users: [...users],
+    grades: [...grades],
+    timestamp: new Date().toISOString()
+  };
+  
+  archives.push(newArchive);
+  saveToStorage('edutrack_archives', archives);
+  
+  // Reset pour la nouvelle année
+  setActiveYear(nextYear);
+  saveToStorage('edutrack_grades', []);
+  saveToStorage('edutrack_absences', []);
+  saveToStorage('edutrack_discipline', []);
+  
+  window.dispatchEvent(new Event('storage'));
+}
+
+export function getUnreadMessageCount(userId: string): number {
+  const messages = getFromStorage<any>('edutrack_messages');
+  return messages.filter((m: any) => m.receiverId === userId && !m.read).length;
+}
+
+export function sendMessage(msg: any) {
+  const messages = getFromStorage<any>('edutrack_messages');
+  messages.push({
+    ...msg,
+    timestamp: new Date().toISOString(),
+    read: false
+  });
+  saveToStorage('edutrack_messages', messages);
+}
+
+export function markConversationAsRead(userId: string, senderId: string) {
+  const messages = getFromStorage<any>('edutrack_messages');
+  const updated = messages.map((m: any) => 
+    (m.receiverId === userId && m.senderId === senderId) ? { ...m, read: true } : m
+  );
+  saveToStorage('edutrack_messages', updated);
 }
 
 export function getGlobalStats() {
